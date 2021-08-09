@@ -21,9 +21,9 @@ jobs:
       with:
         java-version: '8'
         distribution: 'adopt'
-    - name: Go to corda-interop-app
-      run: cd core/network/corda-interop-app
     - name: Build with Gradle
       run: make build-local
+      working-directory: core/network/corda-interop-app
     - name: Build with Gradle
       run: make test
+      working-directory: core/network/corda-interop-app
