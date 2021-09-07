@@ -32,7 +32,7 @@ func TestRead(t *testing.T) {
 	chaincodeStub.GetStateReturnsOnCall(0, nil, fmt.Errorf("failed reading from ledger"))
 	err := ss.Update(ctx, key, value)
 	require.Error(t, err)
-	require.EqualError(t, err, "Failed to read key '" + key + "' from world state. " + "failed reading from ledger")
+	require.EqualError(t, err, "Failed to aread key '" + key + "' from world state. " + "failed reading from ledger")
 
 	valueBytes := []byte(value)
 	chaincodeStub.GetStateReturnsOnCall(1, valueBytes, nil)
