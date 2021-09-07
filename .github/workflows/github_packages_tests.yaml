@@ -4,6 +4,11 @@ name: Tests for Github Packages
 
 # Controls when the workflow will run
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     
@@ -47,6 +52,20 @@ jobs:
         
       - name: Generate github.properties (else)
         if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          echo "Using ${GITHUB_ACTOR} user."
+          echo "username=${GITHUB_ACTOR}" >> github.properties
+          echo "password=${{ secrets.GITHUB_TOKEN }}" >> github.properties
+          echo "url=https://maven.pkg.github.com/hyperledger-labs/weaver-dlt-interoperability" >> github.properties
+          cat github.properties
+        working-directory: tests/network-setups/corda
+        
+      - name: Test Github Packages Fetch
+        run: ./scripts/get-cordapps.sh
+        working-directory: tests/network-setups/corda
+        
+      - name: Generate github.properties (on failure of above step)
+        if: ${{ failure() }}
         run: |
           echo "Using ${GITHUB_ACTOR} user."
           echo "username=${GITHUB_ACTOR}" >> github.properties
