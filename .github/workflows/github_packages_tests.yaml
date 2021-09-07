@@ -61,6 +61,7 @@ jobs:
         working-directory: tests/network-setups/corda
         
       - name: Test Github Packages Fetch
+        continue-on-error: true
         run: ./scripts/get-cordapps.sh
         working-directory: tests/network-setups/corda
         
