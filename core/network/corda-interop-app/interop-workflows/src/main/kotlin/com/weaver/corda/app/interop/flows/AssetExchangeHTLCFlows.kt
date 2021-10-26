@@ -28,12 +28,18 @@ import net.corda.core.flows.*
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.ServiceHub
+import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.unwrap
 import java.time.Instant
 import java.util.Base64
+
+enum class ResponderRole {
+  LOCKER, RECIPIENT, ISSUER, OBSERVER
+}
     
 /**
  * The LockAssetHTLCFlows flow is used to create a lock for an asset using HTLC.
@@ -306,7 +312,7 @@ object ClaimAssetHTLC {
                         var sessions = listOf<FlowSession>()
                         if (!assetExchangeHTLCState.recipient.equals(issuer)) {
                             val issuerSession = initiateFlow(issuer)
-                            issuerSession.send(true)
+                            issuerSession.send(ResponderRole.ISSUER)
                             sessions += issuerSession
                         }
                         val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, sessions))
@@ -314,12 +320,12 @@ object ClaimAssetHTLC {
                         var observerSessions = listOf<FlowSession>()
                         if (!assetExchangeHTLCState.locker.equals(issuer)) {
                             val lockerSession = initiateFlow(assetExchangeHTLCState.locker)
-                            lockerSession.send(false)
+                            lockerSession.send(ResponderRole.LOCKER)
                             observerSessions += lockerSession
                         }
                         for (obs in observers) {
                             val obsSession = initiateFlow(obs)
-                            obsSession.send(false)
+                            obsSession.send(ResponderRole.OBSERVER)
                             observerSessions += obsSession
                         }
                         Right(subFlow(FinalityFlow(fullySignedTx, sessions + observerSessions)))
@@ -336,8 +342,8 @@ object ClaimAssetHTLC {
     class Acceptor(val session: FlowSession) : FlowLogic<SignedTransaction>() {
         @Suspendable
         override fun call(): SignedTransaction {
-            val needsToSignTransaction = session.receive<Boolean>().unwrap { it }
-            if (needsToSignTransaction) {
+            val role = session.receive<ResponderRole>().unwrap { it }
+            if (role == ResponderRole.ISSUER) {
                 val signTransactionFlow = object : SignTransactionFlow(session) {
                     override fun checkTransaction(stx: SignedTransaction) = requireThat {
                     }
@@ -350,10 +356,22 @@ object ClaimAssetHTLC {
                     println("Error signing claim asset transaction by issuer: ${e.message}\n")
                     return subFlow(ReceiveFinalityFlow(session))
                 }
-            } else {
+            } else if (role == ResponderRole.LOCKER) {
                 val sTx = subFlow(ReceiveFinalityFlow(session))
-                println("Received Tx: ${sTx}")
+                val lTx = sTx.tx.toLedgerTransaction(serviceHub)
+                val claimCmd = lTx.commandsOfType<AssetExchangeHTLCStateContract.Commands.Claim>().single()
+                // val claimCmd = sTx.tx.commands.filterIsInstance<AssetExchangeHTLCStateContract.Commands.Claim>()[0]
+                val secret = claimCmd.value.assetClaimHTLC.hashPreimage
+                println("Hash Pre-Image revealed: ${secret}")
+                println("Locker Received Tx: ${sTx} and recorded relevant states.")
                 return sTx
+            } else if (role == ResponderRole.OBSERVER) {
+                val sTx = subFlow(ReceiveFinalityFlow(session, statesToRecord = StatesToRecord.ALL_VISIBLE))
+                println("Received Tx: ${sTx} and recorded states.")
+                return sTx
+            } else {
+                println("Incorrect Responder Role.")
+                throw IllegalStateException("Incorrect Responder Role.")
             }
         }
     }
