@@ -20,10 +20,11 @@ services:
     - ACCEPT_LICENSE=${ACCEPT_LICENSE}
     user: root
     ports:
-      - 10003:10003
+      - 30003:10003
       - 22022
     image: corda/corda-zulu-java1.8-4.8
   partya:
+    profiles: ["1-node", "2-nodes", "3-nodes"]
     volumes:
       - ./build/nodes/PartyA/node.conf:/etc/corda/node.conf
       - ./build/nodes/PartyA/certificates:/opt/corda/certificates
@@ -37,10 +38,11 @@ services:
     - ACCEPT_LICENSE=${ACCEPT_LICENSE}
     user: root
     ports:
-      - 10006:10003
+      - 30006:10003
       - 22022
     image: corda/corda-zulu-java1.8-4.8
   partyb:
+    profiles: ["2-nodes", "3-nodes"]
     volumes:
     - ./build/nodes/PartyB/node.conf:/etc/corda/node.conf
     - ./build/nodes/PartyB/certificates:/opt/corda/certificates
@@ -54,10 +56,11 @@ services:
     - ACCEPT_LICENSE=${ACCEPT_LICENSE}
     user: root
     ports:
-      - 10009:10003
+      - 30009:10003
       - 22022
     image: corda/corda-zulu-java1.8-4.8
   partyc:
+    profiles: ["3-nodes"]
     volumes:
     - ./build/nodes/PartyC/node.conf:/etc/corda/node.conf
     - ./build/nodes/PartyC/certificates:/opt/corda/certificates
@@ -71,6 +74,6 @@ services:
     - ACCEPT_LICENSE=${ACCEPT_LICENSE}
     user: root
     ports:
-      - 10012:10003
+      - 30012:10003
       - 22022
     image: corda/corda-zulu-java1.8-4.8
