@@ -89,15 +89,28 @@ fun configNetworkHelper(network: String, config: Map<String, String>) {
  */
 fun configureCreateAllHelper() {
     // Some variables specific to network
-    val baseNodesPath = System.getenv("BASE_NODE_PATH") ?: "../../../tests/network-setups/corda/build/nodes/"
     val networkName = System.getenv("NETWORK_NAME") ?: "Corda_Network"
+    val baseNodesPath = System.getenv("BASE_NODE_PATH") ?: "../../../tests/network-setups/corda/dev/" + networkName + "/build/nodes/"
     val nodesList = System.getenv("NODES_LIST") ?: "PartyA"
-    val remoteFlow = System.getenv("REMOTE_FLOW") ?: "mychannel:simplestate:Read:*"
-    val locFlow = System.getenv("LOCAL_FLOW") ?: "localhost:10006#com.cordaSimpleApplication.flow.GetStateByKey:*"
+
+    val partyHost = System.getenv("CORDA_HOST") ?: "localhost"
+    val partyPort = System.getenv("CORDA_PORT") ?: "10006"
+    val defaultCordaFlow = partyHost + ":" + partyPort + "#com.cordaSimpleApplication.flow.GetStateByKey:*"
+
+    val remoteFlow = System.getenv("REMOTE_FLOW") ?: "mychannel:simplestate:Read:*" 
+    val locFlow = System.getenv("LOCAL_FLOW") ?: defaultCordaFlow
     
     val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
     val destPath = "${credentialPath}/${networkName}/"
     val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
+
+    println("Base node path: ${baseNodesPath}")
+    println("Flow: ${locFlow}")
+
+    val destPathObj = File(destPath);
+    if (!destPathObj.exists()){
+        destPathObj.mkdir()
+    }
     
     val credentialsCreator = CredentialsCreator(
         baseNodesPath, 
