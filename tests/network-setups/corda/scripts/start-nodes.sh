@@ -19,7 +19,7 @@ for party in ${parties}; do
   if [ "simple" = "$app" ]; then
     cp $directory/../shared/artifacts/contracts-kotlin-$simpleAppVersion.jar dev/${nw}/build/nodes/${party}/cordapps
     cp $directory/../shared/artifacts/workflows-kotlin-$simpleAppVersion.jar dev/${nw}/build/nodes/${party}/cordapps
-  elif [ "house" = "$app"]; then
+  elif [ "house" = "$app" ]; then
     cp $directory/../shared/artifacts/contracts-$houseTokenAppversion.jar dev/${nw}/build/nodes/${party}/cordapps
     cp $directory/../shared/artifacts/workflows-$houseTokenAppversion.jar dev/${nw}/build/nodes/${party}/cordapps
     
