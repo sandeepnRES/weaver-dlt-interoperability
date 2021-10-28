@@ -54,11 +54,24 @@ fun createAccessControlPolicyFromFile(network: String, config: Map<String, Strin
             accessControlPolicyBuilder
         );
         println("Storing access control policy in the vault")
+        val accessControlPolicyProto = accessControlPolicyBuilder.build()
         val res = AccessControlPolicyManager.createAccessControlPolicyState(
             rpc.proxy,
-            accessControlPolicyBuilder.build()
+            accessControlPolicyProto
         )
-        println("Access Control Policy Create Result: $res")
+        if (res.isRight()) {
+            println("Access Control Policy Create Succesful Result: $res")            
+        } else {
+            val getRes = AccessControlPolicyManager.getAccessControlPolicyState(
+                rpc.proxy, 
+                accessControlPolicyProto.securityDomain
+            )
+            if (getRes.isRight()) {
+                updateAccessControlPolicyFromFile(network, config)
+            } else {
+                println("Error: Access Control Policy Create Failure Result: $res")    
+            }
+        }
     } catch (e: Exception) {
       println("Error: ${e.toString()}")
     } finally {

@@ -52,12 +52,24 @@ fun createMembershipFromFile(network: String, config: Map<String, String>) {
             membershipBuilder
         );
         println("Storing membership in the vault")
+        val membershipProto = membershipBuilder.build()
         val res = MembershipManager.createMembershipState(
             rpc.proxy,
-            membershipBuilder.build()
+            membershipProto
         )
-        println("Membership Create Result: $res")
-        
+        if (res.isRight()) {
+            println("Membership Create Succesful Result: $res")            
+        } else {
+            val getRes = MembershipManager.getMembershipState(
+                rpc.proxy, 
+                membershipProto.securityDomain
+            )
+            if (getRes.isRight()) {
+                updateMembershipFromFile(network, config)
+            } else {
+                println("Error: Membership Create Failure Result: $res")    
+            }
+        }        
     } catch (e: Exception) {
         println("Error: ${e.toString()}")
     } finally {
