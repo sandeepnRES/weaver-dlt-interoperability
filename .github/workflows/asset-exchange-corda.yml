@@ -63,7 +63,7 @@ jobs:
       # CORDA NETWORK
       - name: Start Corda Network
         run: |
-          make start
+          make start PROFILE=3-nodes
           sleep 100
           docker logs corda_partya_1
           docker logs corda_partyb_1
@@ -164,7 +164,7 @@ jobs:
       # CORDA NETWORK
       - name: Start Corda Network
         run: |
-          make start-local
+          make start-local PROFILE=3-nodes
           sleep 100
           docker logs corda_partya_1
           docker logs corda_partyb_1
@@ -270,7 +270,7 @@ jobs:
       # CORDA NETWORK
       - name: Start Corda Network
         run: |
-          make start-house
+          make start APP_NAME=house PROFILE=3-nodes
           sleep 100
           docker logs corda_partya_1
           docker logs corda_partyb_1
