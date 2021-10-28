@@ -64,7 +64,7 @@ To get the CorDapps from Github Packages you will need to have permission to do 
   make start APP_NAME=<simple/house> PROFILE=<1-node/2-nodes/3-nodes>
   ```
   Here `simple` refers to `cordaSimpleApplication` and `house` refers to the `fungible-house-token` app.
-  `PROFILE` defines the number of nodes to be started.
+  `PROFILE` defines the number of nodes to be started. You need only `1-node` for data transfer, either `2-nodes` or `3-nodes` for asset-exchange or asset-transfer.
 - To start the corda networks (`Corda_Network`, and `Corda_Network2`), using CorDapps from locally built jars, refer to the following command:
   ```bash
   make start-local APP_NAME=<simple/house> PROFILE=<1-node/2-nodes/3-nodes>
