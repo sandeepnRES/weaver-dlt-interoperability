@@ -14,6 +14,9 @@ import com.google.protobuf.util.JsonFormat
 import java.io.File
 import java.lang.Exception
 import java.util.*
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.stream.Collectors
 
 import com.weaver.corda.sdk.CredentialsCreator
 
@@ -29,13 +32,10 @@ class ConfigureCommand : CliktCommand(help ="Configure Command") {
 class ConfigureAllCommand : CliktCommand(name="all",
         help = "Creates an Access Control Policy, Membership, and Verification Policy for an external network. ") {
     val config by requireObject<Map<String, String>>()
-    val networks: String by argument()
     override fun run() = runBlocking {
         configureCreateAllHelper()
         configDataHelper(config)
-        for (network in networks.split(",")) {
-            configNetworkHelper(network, config)
-        }
+        configNetworkHelper(config)
     }
 }
 
@@ -56,9 +56,8 @@ class ConfigureDataCommand : CliktCommand(name="data",
 class ConfigureNetworkCommand : CliktCommand(name="network",
         help = "Creates an Access Control Policy, Membership, and Verification Policy for an external network. ") {
     val config by requireObject<Map<String, String>>()
-    val network: String by argument()
     override fun run() = runBlocking {
-        configNetworkHelper(network, config)
+        configNetworkHelper(config)
     }
 }
 
@@ -84,10 +83,23 @@ fun configDataHelper(config: Map<String, String>) {
 /**
  * Helper function used by ConfigureNetworkCommand
  */
-fun configNetworkHelper(network: String, config: Map<String, String>) {
-    createMembershipFromFile(network, config)
-    createAccessControlPolicyFromFile(network, config)
-    createVerificationPolicyFromFile(network, config)
+fun configNetworkHelper(config: Map<String, String>) {
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
+    val myNetworkName = System.getenv("NETWORK_NAME") ?: "Corda_Network"
+    val networkNames: Set<String> = Files.list(Paths.get(credentialPath))
+        .filter { file -> Files.isDirectory(file) }
+        .map { it -> it.fileName }
+        .map { it -> it.toString() }
+        .collect(Collectors.toSet());
+    println("All network credentials found: ${networkNames}")
+    for (networkName in networkNames) {
+        if (networkName != myNetworkName) {
+            println("Network ${networkName}")
+            createMembershipFromFile(networkName, config)
+            createAccessControlPolicyFromFile(networkName, config)
+            createVerificationPolicyFromFile(networkName, config)
+        }
+    }
 }
 
 /**
@@ -106,7 +118,7 @@ fun configureCreateAllHelper() {
     val remoteFlow = System.getenv("REMOTE_FLOW") ?: "mychannel:simplestate:Read:*" 
     val locFlow = System.getenv("LOCAL_FLOW") ?: defaultCordaFlow
     
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val destPath = "${credentialPath}/${networkName}/"
     val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
 

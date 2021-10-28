@@ -36,7 +36,7 @@ class CreateVerificationPolicyCommand : CliktCommand(help = "Creates a Verificat
  * Helper function to create a verification policy for an external network
  */
 fun createVerificationPolicyFromFile(network: String, config: Map<String, String>) {
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val filepath = "${credentialPath}/${network}/verification-policy.json"
     val rpc = NodeRPCConnection(
             host = config["CORDA_HOST"]!!,
@@ -79,7 +79,7 @@ class UpdateVerificationPolicyCommand : CliktCommand(help = "Updates a Verificat
  * Helper function for UpdateVerificationPolicyCommand
  */
 fun updateVerificationPolicyFromFile(network: String, config: Map<String, String>) {
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val filepath = "${credentialPath}/${network}/verification-policy.json"
     val rpc = NodeRPCConnection(
             host = config["CORDA_HOST"]!!,

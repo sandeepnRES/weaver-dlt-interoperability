@@ -50,12 +50,13 @@ test: github.properties
 
 .PHONY: initialise-vault
 initialise-vault:
-	 REMOTE_FLOW="localhost:30006#com.cordaSimpleApplication.flow.GetStateByKey:*" ./clients/build/install/clients/bin/clients configure-all Corda_Network2,network1,network2
-	CORDA_PORT=30006 NETWORK_NAME=Corda_Network2 REMOTE_FLOW="localhost:10006#com.cordaSimpleApplication.flow.GetStateByKey:*" ./clients/build/install/clients/bin/clients configure-all Corda_Network,network1,network2
+	REMOTE_FLOW="localhost:30006#com.cordaSimpleApplication.flow.GetStateByKey:*" ./clients/build/install/clients/bin/clients configure all
+	CORDA_PORT=30006 NETWORK_NAME=Corda_Network2 REMOTE_FLOW="localhost:10006#com.cordaSimpleApplication.flow.GetStateByKey:*" ./clients/build/install/clients/bin/clients configure all
 
 .PHONY: initialise-vault-docker
 initialise-vault-docker:
-	./clients/build/install/clients/bin/clients configure-all network1-docker,network2-docker
+	REMOTE_FLOW="corda_network2_partya_1:10003#com.cordaSimpleApplication.flow.GetStateByKey:*" ./clients/build/install/clients/bin/clients configure all
+	CORDA_PORT=30006 NETWORK_NAME=Corda_Network2 REMOTE_FLOW="corda_partya_1:10003#com.cordaSimpleApplication.flow.GetStateByKey:*" ./clients/build/install/clients/bin/clients configure all
 
 .PHONY: get-access-control-policies
 get-access-control-policies:

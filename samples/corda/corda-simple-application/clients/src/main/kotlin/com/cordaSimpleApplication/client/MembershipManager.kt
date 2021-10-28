@@ -36,7 +36,7 @@ class CreateMembershipCommand : CliktCommand(help = "Creates a Membership for an
  * Helper function for CreateMembershipCommand
  */
 fun createMembershipFromFile(network: String, config: Map<String, String>) {
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val filepath = "${credentialPath}/${network}/membership.json"
     val rpc = NodeRPCConnection(
             host = config["CORDA_HOST"]!!,
@@ -80,7 +80,7 @@ class UpdateMembershipCommand : CliktCommand(help = "Updates a Membership for an
  * Helper function for UpdateMembershipCommand
  */
 fun updateMembershipFromFile(network: String, config: Map<String, String>) {
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val filepath = "${credentialPath}/${network}/membership.json"
     val rpc = NodeRPCConnection(
             host = config["CORDA_HOST"]!!,

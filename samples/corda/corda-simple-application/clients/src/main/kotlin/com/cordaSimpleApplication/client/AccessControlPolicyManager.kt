@@ -38,7 +38,7 @@ class CreateAccessControlPolicyCommand : CliktCommand(
  * Helper function to create Access Control Policy for an external network
  */
 fun createAccessControlPolicyFromFile(network: String, config: Map<String, String>) {
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val filepath = "${credentialPath}/${network}/access-control.json"
     val rpc = NodeRPCConnection(
             host = config["CORDA_HOST"]!!,
@@ -83,7 +83,7 @@ class UpdateAccessControlPolicyCommand : CliktCommand(help = "Updates an Access 
  * Helper function to update Access Control Policy for an external network
  */
 fun updateAccessControlPolicyFromFile(network: String, config: Map<String, String>) {
-    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config"
+    val credentialPath = System.getenv("MEMBER_CREDENTIAL_FOLDER") ?: "clients/src/main/resources/config/credentials"
     val filepath = "${credentialPath}/${network}/access-control.json"
     val rpc = NodeRPCConnection(
             host = config["CORDA_HOST"]!!,
