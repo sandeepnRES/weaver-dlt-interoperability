@@ -17,10 +17,16 @@ import java.util.*
 
 import com.weaver.corda.sdk.CredentialsCreator
 
+class ConfigureCommand : CliktCommand(help ="Configure Command") {
+    override fun run() {
+    }
+}
+
+
 /**
  * TODO: Documentation
  */
-class ConfigureAllCommand : CliktCommand(
+class ConfigureAllCommand : CliktCommand(name="all",
         help = "Creates an Access Control Policy, Membership, and Verification Policy for an external network. ") {
     val config by requireObject<Map<String, String>>()
     val networks: String by argument()
@@ -36,8 +42,8 @@ class ConfigureAllCommand : CliktCommand(
 /**
  * TODO: Documentation
  */
-class ConfigureDataCommand : CliktCommand(
-        help = "Creates an Access Control Policy, Membership, and Verification Policy for an external network. ") {
+class ConfigureDataCommand : CliktCommand(name="data",
+        help = "Creates SimpleStates in network. ") {
     val config by requireObject<Map<String, String>>()
     override fun run() = runBlocking {
         configDataHelper(config)
@@ -47,7 +53,7 @@ class ConfigureDataCommand : CliktCommand(
 /**
  * TODO: Documentation
  */
-class ConfigureNetworkCommand : CliktCommand(
+class ConfigureNetworkCommand : CliktCommand(name="network",
         help = "Creates an Access Control Policy, Membership, and Verification Policy for an external network. ") {
     val config by requireObject<Map<String, String>>()
     val network: String by argument()
@@ -59,7 +65,7 @@ class ConfigureNetworkCommand : CliktCommand(
 /**
  * TODO: Documentation
  */
-class ConfigureCreateAllCommand : CliktCommand(
+class ConfigureCreateAllCommand : CliktCommand(name="create-all",
         help = "Generate Access Control Policy, Membership, and Verification Policy for this network and stores in folder.") {
     val config by requireObject<Map<String, String>>()
     override fun run() = runBlocking {
