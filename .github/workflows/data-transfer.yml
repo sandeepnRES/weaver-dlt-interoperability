@@ -187,7 +187,7 @@ jobs:
           cat tmp.out | grep "SimpleState(key=C, value=\[SimpleState(key=C, value=20" && COUNT=$(( COUNT + 1 )) && echo "PASS"
           cat tmp.out
 
-          ./clients/build/install/clients/bin/clients get-state C 1> tmp.out
+          NETWORK_NAME=Corda_Network2 CORDA_PORT=30006 ./clients/build/install/clients/bin/clients get-state C 1> tmp.out
           cat tmp.out | grep "SimpleState(key=C, value=\[SimpleState(key=C, value=20" && COUNT=$(( COUNT + 1 )) && echo "PASS"
           cat tmp.out
 
@@ -481,7 +481,7 @@ jobs:
           cat tmp.out | grep "SimpleState(key=C, value=\[SimpleState(key=C, value=20" && COUNT=$(( COUNT + 1 )) && echo "PASS"
           cat tmp.out
           
-          ./clients/build/install/clients/bin/clients get-state C 1> tmp.out
+          NETWORK_NAME=Corda_Network2 CORDA_PORT=30006 ./clients/build/install/clients/bin/clients get-state C 1> tmp.out
           cat tmp.out | grep "SimpleState(key=C, value=\[SimpleState(key=C, value=20" && COUNT=$(( COUNT + 1 )) && echo "PASS"
           cat tmp.out
           
