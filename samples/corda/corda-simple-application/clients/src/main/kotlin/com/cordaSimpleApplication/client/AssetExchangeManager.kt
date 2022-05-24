@@ -30,24 +30,6 @@ import com.weaver.corda.sdk.AssetManager
 import com.cordaSimpleApplication.state.AssetState
 import com.cordaSimpleApplication.contract.AssetContract
 
-/**
- * Generates Hash to be used for HTLC for a given secret:
- * get-hash -s <secret>
- * get-hash --secret=<secret>
- */
-class GetHashCommand : CliktCommand(
-        help = "Generates Hash to be used for HTLC for a given secret. Usage: get-hash --secret=<secret>") {
-    val secret by option("-s", "--secret", help="String to be hashed")
-    override fun run() = runBlocking {
-        if (secret == null) {
-            println("Parameter --secret or -s not given.")
-        } else {
-            val secret = OpaqueBytes(secret!!.toByteArray())
-            val hashBase64 = Base64.getEncoder().encodeToString(secret.sha256().bytes)
-            println("Hash in Base64: ${hashBase64}")
-        }
-    }
-}
 
 /**
  * Command to lock an asset.
