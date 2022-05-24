@@ -25,8 +25,6 @@ import com.weaver.corda.app.interop.states.AssetExchangeHTLCState
 
 import com.weaver.protos.common.asset_locks.AssetLocks
 
-data class HTLCHashAndContractId(val hash: HashFunctions.Hash, val contractId: String)
-
 class AssetManager {
     companion object {
         private val logger = LoggerFactory.getLogger(AssetManager::class.java)
@@ -44,12 +42,9 @@ class AssetManager {
             deleteAssetStateCommand: CommandData,
             issuer: Party,
             observers: List<Party> = listOf<Party>()
-        ): Either<Error, HTLCHashAndContractId> {
+        ): Either<Error, String> {
             return try {
                 AssetManager.logger.debug("Sending asset-lock request to Corda as part of asset-exchange.\n")
-                if(hash.hash64 == "") {
-                    hash.generateRandomPreimage(22)
-                }
 
                 val result = runCatching {
                     val assetAgreement = createAssetExchangeAgreement(assetType, assetId, recipientParty, "")
@@ -60,7 +55,7 @@ class AssetManager {
                 }.fold({
                     it.map { linearId ->
                         AssetManager.logger.debug("Locking asset was successful and the state was stored with linearId $linearId.\n")
-                        HTLCHashAndContractId(hash, linearId.toString())
+                        linearId.toString()
                     }
                 }, {
                     Left(Error("Corda Network Error: Error running LockAsset flow: ${it.message}\n"))
@@ -85,12 +80,9 @@ class AssetManager {
             deleteAssetStateCommand: CommandData,
             issuer: Party,
             observers: List<Party> = listOf<Party>()
-        ): Either<Error, HTLCHashAndContractId> {
+        ): Either<Error, String> {
             return try {
                 AssetManager.logger.debug("Sending fungible asset-lock request to Corda as part of asset-exchange.\n")
-                if(hash.hash64 == "") {
-                    hash.generateRandomPreimage(22)
-                }
                 val result = runCatching {
                     
                     val assetAgreement = createFungibleAssetExchangeAgreement(tokenType, numUnits, recipientParty, "")
@@ -101,7 +93,7 @@ class AssetManager {
                 }.fold({
                     it.map { linearId ->
                         AssetManager.logger.debug("Locking fungible asset was successful and the state was stored with linearId $linearId.\n")
-                        HTLCHashAndContractId(hash, linearId.toString())
+                        linearId.toString()
                     }
                 }, {
                     Left(Error("Corda Network Error: Error running LockFungibleAsset flow: ${it.message}\n"))
