@@ -10,6 +10,7 @@ import java.util.Base64
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.crypto.sha256
 import kotlin.random.Random
+import com.weaver.protos.common.asset_locks.AssetLocks.HashMechanism
 
 /*
  * Interface for all hash functions to be used for HTLC
@@ -21,7 +22,7 @@ import kotlin.random.Random
 interface Hash {
     val preImage: String?
     val hash64: String
-    val HASH_NAME: String
+    val HASH_MECHANISM: HashMechanism
     fun generateRandomPreimage(length: Int)
     fun setPreimage(preImage: String)
     fun getPreimage(): String?;
@@ -36,7 +37,7 @@ interface Hash {
 class SHA256(
     override var preImage: String? = null,
     override var hash64: String = "",
-    override val HASH_NAME: String = "SHA256"
+    override val HASH_MECHANISM: HashMechanism = HashMechanism.SHA256
 ) : Hash {
     override fun generateRandomPreimage(length: Int)
     {
