@@ -27,6 +27,7 @@ import java.time.Instant
 import net.corda.core.identity.CordaX500Name
 
 import com.weaver.corda.sdk.AssetManager
+import com.weaver.corda.sdk.HashFunctions
 import com.cordaSimpleApplication.state.AssetState
 import com.cordaSimpleApplication.contract.AssetContract
 
@@ -39,12 +40,17 @@ import com.cordaSimpleApplication.contract.AssetContract
 class LockAssetCommand : CliktCommand(
         help = "Locks an asset. lock-asset --fungible --hashBase64=hashbase64 --timeout=10 --recipient='PartyA' --param=type:amount ") {
     val config by requireObject<Map<String, String>>()
+    val hash_fn: String? by option("-hfn", "--hash-fn", help="Hash Function to be used. Default: SHA256")
     val hashBase64: String? by option("-h64", "--hashBase64", help="Hash in base64 for HTLC")
     val timeout: String? by option("-t", "--timeout", help="Timeout duration in seconds.")
     val recipient: String? by option("-r", "--recipient", help="Party Name for recipient")
     val fungible: Boolean by option("-f", "--fungible", help="Fungible Asset Lock: True/False").flag(default = false)
     val param: String? by option("-p", "--param", help="Parameter AssetType:AssetId for non-fungible, AssetType:Quantity for fungible.")
     override fun run() = runBlocking {
+        var hash: HashFunctions.Hash = HashFunctions.SHA256()
+        if(hash_fn == null || hash_fn == "SHA256") {
+            hash = HashFunctions.SHA256()
+        }
         if (hashBase64 == null || recipient == null || param == null) {
             println("One of HashBase64, Recipient, or param argument is missing.")
         } else {
@@ -63,13 +69,14 @@ class LockAssetCommand : CliktCommand(
                 val params = param!!.split(":").toTypedArray()
                 var id: Any
                 val issuer = rpc.proxy.wellKnownPartyFromX500Name(CordaX500Name.parse("O=PartyA,L=London,C=GB"))!!
+                hash.setSerializedHashBase64(hashBase64!!)
                 if (fungible) {
                     id = AssetManager.createFungibleHTLC(
                         rpc.proxy, 
                         params[0],          // Type
                         params[1].toLong(), // Quantity
                         recipient!!, 
-                        hashBase64!!, 
+                        hash, 
                         nTimeout, 
                         1,                  // nTimeout represents Duration
                         "com.cordaSimpleApplication.flow.RetrieveStateAndRef", 
@@ -82,7 +89,7 @@ class LockAssetCommand : CliktCommand(
                         params[0],      // Type
                         params[1],      // ID
                         recipient!!, 
-                        hashBase64!!, 
+                        hash, 
                         nTimeout,  
                         1,              // nTimeout represents Duration
                         "com.cordaSimpleApplication.flow.RetrieveStateAndRef", 
@@ -106,8 +113,13 @@ class LockAssetCommand : CliktCommand(
 class ClaimAssetCommand : CliktCommand(help = "Claim a locked asset. Only Recipient's call will work.") {
     val config by requireObject<Map<String, String>>()
     val contractId: String? by option("-cid", "--contract-id", help="Contract/Linear Id for HTLC State")
+    val hash_fn: String? by option("-hfn", "--hash-fn", help="Hash Function to be used. Default: SHA256")
     val secret: String? by option("-s", "--secret", help="Hash Pre-Image for the HTLC Claim")
     override fun run() = runBlocking {
+        var hash: HashFunctions.Hash = HashFunctions.SHA256()
+        if(hash_fn == null || hash_fn == "SHA256") {
+            hash = HashFunctions.SHA256()
+        }
         if (contractId == null || secret == null) {
             println("Arguments required: --contract-id and --secret.")
         } else {
@@ -118,10 +130,11 @@ class ClaimAssetCommand : CliktCommand(help = "Claim a locked asset. Only Recipi
                     rpcPort = config["CORDA_PORT"]!!.toInt())
             try {
                 val issuer = rpc.proxy.wellKnownPartyFromX500Name(CordaX500Name.parse("O=PartyA,L=London,C=GB"))!!
+                hash.setPreimage(secret!!)
                 val res = AssetManager.claimAssetInHTLC(
                     rpc.proxy, 
                     contractId!!, 
-                    secret!!,
+                    hash,
                     AssetContract.Commands.Issue(),
                     "com.cordaSimpleApplication.flow.UpdateAssetOwnerFromPointer",
                     issuer

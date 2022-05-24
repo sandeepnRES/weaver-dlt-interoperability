@@ -25,6 +25,8 @@ import com.weaver.corda.app.interop.states.AssetExchangeHTLCState
 
 import com.weaver.protos.common.asset_locks.AssetLocks
 
+data class HTLCHashAndContractId(val hash: HashFunctions.Hash, val contractId: String)
+
 class AssetManager {
     companion object {
         private val logger = LoggerFactory.getLogger(AssetManager::class.java)
@@ -35,32 +37,35 @@ class AssetManager {
             assetType: String,
             assetId: String,
             recipientParty: String,
-            hashBase64: String,
+            hash: HashFunctions.Hash,
             expiryTimeSecs: Long,
             timeSpec: Int,
             getAssetStateAndRefFlow: String,
             deleteAssetStateCommand: CommandData,
             issuer: Party,
             observers: List<Party> = listOf<Party>()
-        ): Either<Error, String> {
+        ): Either<Error, HTLCHashAndContractId> {
             return try {
                 AssetManager.logger.debug("Sending asset-lock request to Corda as part of asset-exchange.\n")
+                if(hash.hash64 == "") {
+                    hash.generateRandomPreimage(22)
+                }
 
-                val contractId = runCatching {
+                val result = runCatching {
                     val assetAgreement = createAssetExchangeAgreement(assetType, assetId, recipientParty, "")
-                    val lockInfo = createAssetLockInfo(hashBase64, timeSpec, expiryTimeSecs)
+                    val lockInfo = createAssetLockInfo(hash, timeSpec, expiryTimeSecs)
 
                     proxy.startFlow(::LockAsset, lockInfo, assetAgreement, getAssetStateAndRefFlow, deleteAssetStateCommand, issuer, observers)
                         .returnValue.get()
                 }.fold({
                     it.map { linearId ->
                         AssetManager.logger.debug("Locking asset was successful and the state was stored with linearId $linearId.\n")
-                        linearId.toString()
+                        HTLCHashAndContractId(hash, linearId.toString())
                     }
                 }, {
                     Left(Error("Corda Network Error: Error running LockAsset flow: ${it.message}\n"))
                 })
-                contractId
+                result
             } catch (e: Exception) {
                 AssetManager.logger.error("Error locking asset in Corda network: ${e.message}\n")
                 Left(Error("Error locking asset in Corda network: ${e.message}"))
@@ -73,32 +78,35 @@ class AssetManager {
             tokenType: String,
             numUnits: Long,
             recipientParty: String,
-	        hashBase64: String,
+	        hash: HashFunctions.Hash,
             expiryTimeSecs: Long,
             timeSpec: Int,
             getAssetStateAndRefFlow: String,
             deleteAssetStateCommand: CommandData,
             issuer: Party,
             observers: List<Party> = listOf<Party>()
-        ): Either<Error, String> {
+        ): Either<Error, HTLCHashAndContractId> {
             return try {
                 AssetManager.logger.debug("Sending fungible asset-lock request to Corda as part of asset-exchange.\n")
-                val contractId = runCatching {
+                if(hash.hash64 == "") {
+                    hash.generateRandomPreimage(22)
+                }
+                val result = runCatching {
                     
                     val assetAgreement = createFungibleAssetExchangeAgreement(tokenType, numUnits, recipientParty, "")
-                    val lockInfo = createAssetLockInfo(hashBase64, timeSpec, expiryTimeSecs)
+                    val lockInfo = createAssetLockInfo(hash, timeSpec, expiryTimeSecs)
 
                     proxy.startFlow(::LockFungibleAsset, lockInfo, assetAgreement, getAssetStateAndRefFlow, deleteAssetStateCommand, issuer, observers)
                         .returnValue.get()
                 }.fold({
                     it.map { linearId ->
                         AssetManager.logger.debug("Locking fungible asset was successful and the state was stored with linearId $linearId.\n")
-                        linearId.toString()
+                        HTLCHashAndContractId(hash, linearId.toString())
                     }
                 }, {
                     Left(Error("Corda Network Error: Error running LockFungibleAsset flow: ${it.message}\n"))
                 })
-                contractId
+                result
             } catch (e: Exception) {
                 AssetManager.logger.error("Error locking fungible asset in Corda network: ${e.message}\n")
                 Left(Error("Error locking fungible asset in Corda network: ${e.message}"))
@@ -109,7 +117,7 @@ class AssetManager {
         @JvmOverloads fun claimAssetInHTLC(
             proxy: CordaRPCOps,
             contractId: String,
-            hashPreimage: String,
+            hash: HashFunctions.Hash,
             createAssetStateCommand: CommandData,
             updateAssetStateOwnerFlow: String,
             issuer: Party,
@@ -117,9 +125,12 @@ class AssetManager {
         ): Either<Error, SignedTransaction> {
             return try {
                 AssetManager.logger.debug("Sending asset-claim request to Corda as part of asset-exchange.\n")
+                if (hash.getPreimage() == null) {
+                    Left(Error("Error: Preimage can not be null for claim"))
+                }
                 val signedTx = runCatching {
                     
-                    val claimInfo: AssetLocks.AssetClaim = createAssetClaimInfo(hashPreimage)
+                    val claimInfo: AssetLocks.AssetClaim = createAssetClaimInfo(hash)
 
                     proxy.startFlow(::ClaimAsset, contractId, claimInfo, createAssetStateCommand, updateAssetStateOwnerFlow, issuer, observers)
                         .returnValue.get()
@@ -274,12 +285,13 @@ class AssetManager {
         }
 
         fun createAssetLockInfo(
-            hashBase64: String,
+            hash: HashFunctions.Hash,
             timeSpec: Int,
             expiryTimeSecs: Long): AssetLocks.AssetLock {
 	        
             val lockInfoHTLC = AssetLocks.AssetLockHTLC.newBuilder()
-                .setHashBase64(ByteString.copyFrom(hashBase64.toByteArray()))
+                .setHashMechanism(hash.HASH_MECHANISM)
+                .setHashBase64(ByteString.copyFrom(hash.getSerializedHashBase64().toByteArray()))
                 .setTimeSpecValue(timeSpec)
                 .setExpiryTimeSecs(expiryTimeSecs)
                 .build()
@@ -293,10 +305,11 @@ class AssetManager {
         }
 
         fun createAssetClaimInfo(
-            hashPreimage: String): AssetLocks.AssetClaim {
+            hash: HashFunctions.Hash): AssetLocks.AssetClaim {
 	        
             val claimInfoHTLC = AssetLocks.AssetClaimHTLC.newBuilder()
-                .setHashPreimageBase64(ByteString.copyFrom(Base64.getEncoder().encodeToString(hashPreimage.toByteArray()).toByteArray()))
+                .setHashMechanism(hash.HASH_MECHANISM)
+                .setHashPreimageBase64(ByteString.copyFrom(hash.getSerializedPreimageBase64()!!.toByteArray()))
                 .build()
 
             val claimInfo = AssetLocks.AssetClaim.newBuilder()
