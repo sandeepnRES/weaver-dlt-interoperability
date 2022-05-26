@@ -73,3 +73,4 @@ data class AssetExchangeTxState(
 ) : LinearState {
     override val participants: List<AbstractParty> get() = listOf(locker)
 }
+

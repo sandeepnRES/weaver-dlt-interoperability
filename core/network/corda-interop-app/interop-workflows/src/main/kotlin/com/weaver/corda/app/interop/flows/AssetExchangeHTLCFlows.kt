@@ -287,7 +287,7 @@ class GetAssetExchangeHTLCHashById(
         } else {
             val htlcState = states.first().state.data
             val hashBase64 = Base64.getEncoder().encodeToString(htlcState.lockInfo.hash.bytes)
-            val response = "{\"hashMechanism\":" + htlcState.lockInfo.hashMechanism + ", \"hashBase64\":\"" + hashBase64 + "\"}"
+            val response = "{\"hashMechanism\":\"" + htlcState.lockInfo.hashMechanism + "\", \"hashBase64\":\"" + hashBase64 + "\"}"
             println("Response GetAssetExchangeHTLCHashById: ${response}")
             return response.toByteArray()
         }

@@ -73,7 +73,7 @@ class AssetManager {
             tokenType: String,
             numUnits: Long,
             recipientParty: String,
-	        hash: HashFunctions.Hash,
+            hash: HashFunctions.Hash,
             expiryTimeSecs: Long,
             timeSpec: Int,
             getAssetStateAndRefFlow: String,

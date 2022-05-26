@@ -56,8 +56,10 @@ class LockHouseTokenCommand : CliktCommand(name="lock",
     val observer: String? by option("-o", "--observer", help="Party Name for Observer")
     override fun run() = runBlocking {
         var hash: HashFunctions.Hash = HashFunctions.SHA256()
-        if(hash_fn == null || hash_fn == "SHA256") {
+        if(hash_fn == "SHA256") {
             hash = HashFunctions.SHA256()
+        } else if ( hash_fn == "SHA512") {
+            hash = HashFunctions.SHA512()
         }
         if (hashBase64 == null || recipient == null || param == null) {
             println("One of HashBase64, Recipient, or param argument is missing.")
@@ -134,8 +136,10 @@ class ClaimHouseTokenCommand : CliktCommand(name="claim", help = "Claim a locked
     val observer: String? by option("-o", "--observer", help="Party Name for Observer")
     override fun run() = runBlocking {
         var hash: HashFunctions.Hash = HashFunctions.SHA256()
-        if(hash_fn == null || hash_fn == "SHA256") {
+        if(hash_fn == "SHA256") {
             hash = HashFunctions.SHA256()
+        } else if ( hash_fn == "SHA512") {
+            hash = HashFunctions.SHA512()
         }
         if (contractId == null || secret == null) {
             println("Arguments required: --contract-id and --secret.")

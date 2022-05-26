@@ -9,6 +9,7 @@ package com.weaver.corda.app.interop.contracts
 import com.weaver.corda.app.interop.states.AssetExchangeHTLCState
 import com.weaver.corda.app.interop.states.AssetClaimHTLCData
 import com.weaver.corda.app.interop.states.AssetExchangeTxState
+import com.weaver.corda.app.interop.states.sha512
 import com.weaver.protos.common.asset_locks.AssetLocks.HashMechanism
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
@@ -80,6 +81,8 @@ class AssetExchangeHTLCStateContract : Contract {
                 var computedHash: ByteArray? = null
                 if (claimCmd.value.assetClaimHTLC.hashMechanism == HashMechanism.SHA256) {
                     computedHash = claimCmd.value.assetClaimHTLC.hashPreimage.sha256().bytes
+                } else if (claimCmd.value.assetClaimHTLC.hashMechanism == HashMechanism.SHA512) {
+                    computedHash = claimCmd.value.assetClaimHTLC.hashPreimage.sha512().bytes
                 }
                 "Hash Mechanism must be among the supported mechanisms." using (computedHash != null)
                 

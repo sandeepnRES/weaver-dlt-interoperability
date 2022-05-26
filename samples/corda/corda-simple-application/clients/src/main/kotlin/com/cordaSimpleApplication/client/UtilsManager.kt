@@ -38,7 +38,7 @@ class UtilsCommand : CliktCommand(name = "utils", help ="Manages utilities") {
  */
 class GetHashCommand : CliktCommand(name = "hash",
         help = "Generates Hash to be used for HTLC for a given secret. Usage: utils hash --secret=<secret>") {
-    val hash_fn: String? by option("-hfn", "--hash-fn", help="Hash Function to be used. Default: SHA256")
+    val hash_fn: String? by option("-hfn", "--hash-fn", help="Hash Function to be used. Supported: SHA256, SHA512. Default: SHA256")
     val secret: String? by option("-s", "--secret", help="Preimage to be hashed")
     val random: Boolean by option("-r", "--random", help="Random generate preimage").flag(default = false)
     override fun run() = runBlocking {
@@ -46,8 +46,10 @@ class GetHashCommand : CliktCommand(name = "hash",
             println("Either provide Parameter --secret (-s) or set --random (-r) flag")
         }
         var hash: HashFunctions.Hash = HashFunctions.SHA256()
-        if(hash_fn == null || hash_fn == "SHA256") {
+        if(hash_fn == "SHA256") {
             hash = HashFunctions.SHA256()
+        } else if ( hash_fn == "SHA512") {
+            hash = HashFunctions.SHA512()
         }
         if (random) {
             hash.generateRandomPreimage(22)

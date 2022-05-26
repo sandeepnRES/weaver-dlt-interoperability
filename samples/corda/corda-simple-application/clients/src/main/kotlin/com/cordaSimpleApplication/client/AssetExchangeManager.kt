@@ -48,8 +48,10 @@ class LockAssetCommand : CliktCommand(
     val param: String? by option("-p", "--param", help="Parameter AssetType:AssetId for non-fungible, AssetType:Quantity for fungible.")
     override fun run() = runBlocking {
         var hash: HashFunctions.Hash = HashFunctions.SHA256()
-        if(hash_fn == null || hash_fn == "SHA256") {
+        if(hash_fn == "SHA256") {
             hash = HashFunctions.SHA256()
+        } else if ( hash_fn == "SHA512") {
+            hash = HashFunctions.SHA512()
         }
         if (hashBase64 == null || recipient == null || param == null) {
             println("One of HashBase64, Recipient, or param argument is missing.")
@@ -117,8 +119,10 @@ class ClaimAssetCommand : CliktCommand(help = "Claim a locked asset. Only Recipi
     val secret: String? by option("-s", "--secret", help="Hash Pre-Image for the HTLC Claim")
     override fun run() = runBlocking {
         var hash: HashFunctions.Hash = HashFunctions.SHA256()
-        if(hash_fn == null || hash_fn == "SHA256") {
+        if(hash_fn == "SHA256") {
             hash = HashFunctions.SHA256()
+        } else if ( hash_fn == "SHA512") {
+            hash = HashFunctions.SHA512()
         }
         if (contractId == null || secret == null) {
             println("Arguments required: --contract-id and --secret.")

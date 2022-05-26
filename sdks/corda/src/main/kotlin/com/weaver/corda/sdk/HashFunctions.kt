@@ -11,6 +11,7 @@ import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.crypto.sha256
 import kotlin.random.Random
 import com.weaver.protos.common.asset_locks.AssetLocks.HashMechanism
+import com.weaver.corda.app.interop.states.sha512
 
 class HashFunctions {
     /*
@@ -31,15 +32,14 @@ class HashFunctions {
         fun setSerializedHashBase64(hash64: String)
         fun getSerializedHashBase64(): String;
     }
-
-    /*
-     * SHA256 Hash for HTLC, implementing above Hash Interface
-     */
-    class SHA256(
+    
+    abstract class SHA(
         override var preImage: String? = null,
-        override var hash64: String = "",
-        override val HASH_MECHANISM: HashMechanism = HashMechanism.SHA256
-    ) : Hash {
+        override var hash64: String = ""
+    ): Hash {
+        abstract override val HASH_MECHANISM: HashMechanism;
+        abstract fun computeHash(): ByteArray;
+        
         override fun generateRandomPreimage(length: Int)
         {
             val bytes = ByteArray(length)
@@ -48,8 +48,7 @@ class HashFunctions {
         }
         override fun setPreimage(preImage: String) {
             this.preImage = preImage
-            val preImageBytes = OpaqueBytes(preImage.toByteArray())
-            this.hash64 = Base64.getEncoder().encodeToString(preImageBytes.sha256().bytes)
+            this.hash64 = Base64.getEncoder().encodeToString(this.computeHash())
         }
         override fun getPreimage(): String? {
             return this.preImage
@@ -68,6 +67,30 @@ class HashFunctions {
             else
                 throw Error("Error: Hash or Preimage needs to be set before access");
         }
-        
+    }
+
+    /*
+     * SHA256 Hash for HTLC, implementing above Hash Interface
+     */
+    class SHA256(
+        override val HASH_MECHANISM: HashMechanism = HashMechanism.SHA256
+    ) : SHA() {
+        override fun computeHash(): ByteArray
+        {
+            val preImageBytes = OpaqueBytes(this.preImage!!.toByteArray())
+            return preImageBytes.sha256().bytes
+        }
+    }
+    /*
+     * SHA512 Hash for HTLC, implementing above Hash Interface
+     */
+    class SHA512(
+        override val HASH_MECHANISM: HashMechanism = HashMechanism.SHA512
+    ) : SHA() {
+        override fun computeHash(): ByteArray
+        {
+            val preImageBytes = OpaqueBytes(this.preImage!!.toByteArray())
+            return preImageBytes.sha512().bytes
+        }
     }
 }
