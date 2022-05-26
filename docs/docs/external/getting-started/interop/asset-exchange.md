@@ -162,7 +162,7 @@ We will demonstrate asset exchange of a tokens in `Corda_Network` with tokens on
   ```
 - Generate Secret-Hash Pair using following command (prints hash in base64):
 ```
-./clients/build/install/clients/bin/clients utils hash --hash_fn=SHA256 -s secrettext
+./clients/build/install/clients/bin/clients utils hash --hash-fn=SHA256 -s secrettext
 ```
 - Run the following to trigger `PartyA` locking `30` units of token type `t1` for `PartyB` in `Corda_Network` for 60 mins:
   ```bash
