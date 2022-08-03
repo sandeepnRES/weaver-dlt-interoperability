@@ -31,8 +31,9 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "gluegun": "latest",
     "@truffle/contract": "^4.2.14",
+    "gluegun": "latest",
+    "rlp": "^3.0.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {

@@ -2,9 +2,8 @@ import { GluegunCommand } from 'gluegun'
 import { getNetworkConfig, commandHelp } from '../helper/helper'
 import { getContractInstance } from '../helper/besu-functions'
 import RLP from 'rlp'
-//import { arrToBufArr } from 'ethereumjs-util'
 const Web3 = require ("web3")
-import { Keccak } from 'sha3'
+//import { Keccak } from 'sha3'
 
 const command: GluegunCommand = {
 	name: 'interop',
@@ -136,14 +135,9 @@ const command: GluegunCommand = {
         }
         console.log(`Signatures hex ${signaturesHex}`)
 
-        //const signers = []
-        //for (const sign of signaturesHex) {
-        //    signers.push(web3N.eth.accounts.recover(block.hash, sign))
-        //}
-        //console.log(`Signers Addresses : ${signers}`)
-       
-        const onChainBlockHash = await getHelp(block, web3N) 
-        const signers2 = []
+        const signers = []
+        const block_header_serialized = await serialize_block_header(block, web3N) 
+        const onChainBlockHash = web3N.utils.sha3(block_header_serialized)
         for (const sgn of signaturesBytes) {
             const sign: Uint8Array = sgn as Uint8Array
             console.log(sign)
@@ -152,7 +146,7 @@ const command: GluegunCommand = {
             //let s =0
             let r = web3N.utils.bytesToHex(sign.slice(0, 32))
             let s = web3N.utils.bytesToHex(sign.slice(32, 64))
-            let v = web3N.utils.bytesToHex(new Uint8Array([sign[64]+27]))
+            let v = web3N.utils.bytesToHex(new Uint8Array([sign[64]]))
             console.log("Hash:", onChainBlockHash)
             console.log("Signature:", r, s, v)
             const signers_add = web3N.eth.accounts.recover({
@@ -161,24 +155,23 @@ const command: GluegunCommand = {
                 r: r,
                 s: s
             })
-            signers2.push(signers_add)
+                
+            signers.push(signers_add)
             console.log("Signer Address:", signers_add)
         }
 
-        console.log(`Signers Addresses : ${signers2}`)
-        console.log(`val addresses hex ${validatorAddressesHex}`) 
+        console.log(`Signers Addresses : ${signers}`)
+        console.log(`val addresses hex ${validatorAddressesHex}`)
 
-        var sb64 = Buffer.from(signaturesBytes[0]).toString('base64')
-        const bhash_bytes = web3N.utils.hexToBytes(block.hash)
-        var bhashb64 = Buffer.from(bhash_bytes).toString('base64')
-        console.log(`${sb64} \n ${bhash_bytes} \n ${bhashb64}`)
+        let checker = (arr, target) => target.every(v => arr.includes(v.toLowerCase()))
 
-        console.log(`\n${JSON.stringify(Buffer.from(sb64, 'base64'))} \n ${JSON.stringify(Buffer.from(bhashb64, 'base64'))}`)
+        console.log(`Comitters Seal verification success: ${checker(validatorAddressesHex, signers)}`) 
+
         process.exit()
 	}
 }
 
-async function getHelp(block_header, web3N) {
+async function serialize_block_header(block_header, web3N) {
     var extra_data_bytes = []
     const ed_decoded = RLP.decode(block_header['extraData'])
     console.log(ed_decoded)
@@ -190,9 +183,6 @@ async function getHelp(block_header, web3N) {
 
     const extraDataEncoded = RLP.encode(extra_data_bytes)
     console.log(extraDataEncoded)
-    /*const extraDataEncodedBytes = web3N.utils.bytesToHex(extraDataEncoded)
-    console.log("a", extraDataEncodedBytes)
-    console.log("b", block_header['extraData'])*/
 
     var block_header_bytes = []
     block_header_bytes.push(block_header["parentHash"])
@@ -204,7 +194,6 @@ async function getHelp(block_header, web3N) {
     block_header_bytes.push(block_header["logsBloom"])
 
     block_header_bytes.push(web3N.utils.numberToHex(block_header["difficulty"]))
-    //block_header_bytes.push(web3N.utils.hexToBytes(web3N.utils.numberToHex(block_header["number"])))
     block_header_bytes.push(web3N.utils.numberToHex(block_header["number"]))
     block_header_bytes.push(web3N.utils.numberToHex(block_header["gasLimit"]))
     block_header_bytes.push(web3N.utils.numberToHex(block_header["gasUsed"]))
@@ -212,31 +201,15 @@ async function getHelp(block_header, web3N) {
 
     block_header_bytes.push(extraDataEncoded)
     block_header_bytes.push(block_header["mixHash"])
-    /*block_header_bytes.push(web3N.utils.numberToHex(block_header["gasUsed"]))
-    block_header_bytes.push(web3N.utils.numberToHex(block_header["difficulty"]))*/
     block_header_bytes.push(block_header["nonce"])
 
 
-    //if ("baseFee" in block_header) {
-    //    block_header_bytes.push(web3N.utils.hexToBytes(block_header["baseFee"]))
-    //}
     console.log(block_header_bytes)
     const block_header_rlp_encoded = RLP.encode(block_header_bytes)
     console.log(block_header_rlp_encoded)
     const bh_rlp_buffer = Buffer.from(block_header_rlp_encoded)
     console.log(bh_rlp_buffer)
-
-    const hash = new Keccak(256)
-    hash.update(bh_rlp_buffer)
-    const bh_hash_computed = hash.digest('hex')
-    console.log(bh_hash_computed)
-   
-    const bh_hash3 = web3N.utils.sha3(block_header_rlp_encoded)
-    console.log(bh_hash3)
-    const bh_hash4 = web3N.utils.soliditySha3(block_header_rlp_encoded)
-    console.log(bh_hash4)
-    //return bh_hash_computed
-    return bh_hash4
+    return block_header_rlp_encoded
 }
 
 module.exports = command
