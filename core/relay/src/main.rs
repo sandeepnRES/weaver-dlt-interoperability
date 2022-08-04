@@ -1,9 +1,13 @@
 // Internal generated modules
 use pb::networks::networks::network_server::NetworkServer;
 use pb::relay::datatransfer::data_transfer_server::DataTransferServer;
+use pb::relay::events::event_subscribe_server::EventSubscribeServer;
+use pb::relay::events::event_publish_server::EventPublishServer;
 
 // Internal modules
 use services::data_transfer_service::DataTransferService;
+use services::event_subscribe_service::EventSubscribeService;
+use services::event_publish_service::EventPublishService;
 use services::network_service::NetworkService;
 
 // External modules
@@ -51,6 +55,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let relay = DataTransferService {
         config_lock: RwLock::new(settings.clone()),
     };
+    let event_subscribe = EventSubscribeService {
+        config_lock: RwLock::new(settings.clone()),
+    };
+    let event_publish = EventPublishService {
+        config_lock: RwLock::new(settings.clone()),
+    };
     let network = NetworkService {
         config_lock: RwLock::new(settings.clone()),
     };
@@ -64,12 +74,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let server = Server::builder()
             .tls_config(ServerTlsConfig::new().identity(identity))
             .add_service(DataTransferServer::new(relay))
+            .add_service(EventSubscribeServer::new(event_subscribe))
+            .add_service(EventPublishServer::new(event_publish))
             .add_service(NetworkServer::new(network));
         server.serve(addr).await?;
     } else {
         // Spins up two gRPC services in a tonic server. One for relay to relay and one for network to relay communication.
         let server = Server::builder()
             .add_service(DataTransferServer::new(relay))
+            .add_service(EventSubscribeServer::new(event_subscribe))
+            .add_service(EventPublishServer::new(event_publish))
             .add_service(NetworkServer::new(network));
         server.serve(addr).await?;
     }

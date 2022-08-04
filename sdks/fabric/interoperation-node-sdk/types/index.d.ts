@@ -14,3 +14,7 @@ import * as RelayHelper from "../src/Relay";
 export { RelayHelper };
 import * as AssetManager from "../src/AssetManager";
 export { AssetManager };
+import * as HashFunctions from "../src/HashFunctions";
+export { HashFunctions };
+import * as EventsManager from "../src/EventsManager";
+export { EventsManager };

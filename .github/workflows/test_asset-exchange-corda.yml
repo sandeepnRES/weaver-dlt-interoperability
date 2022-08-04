@@ -32,8 +32,7 @@ jobs:
           distribution: 'adopt'
           
       # CORDA NETWORK
-      - name: Generate github.properties (on pull_request)
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Generate github.properties
         run: |
           echo "Using ${GITHUB_ACTOR} user."
           echo "username=${GITHUB_ACTOR}" >> github.properties
@@ -47,16 +46,6 @@ jobs:
           
           ./scripts/get-cordapps.sh || mv github.main.properties github.properties
           
-          cat github.properties
-        working-directory: tests/network-setups/corda
- 
-      - name: Generate github.properties (else)
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          echo "Using ${GITHUB_ACTOR} user."
-          echo "username=${GITHUB_ACTOR}" >> github.properties
-          echo "password=${{ secrets.GITHUB_TOKEN }}" >> github.properties
-          echo "url=https://maven.pkg.github.com/hyperledger-labs/weaver-dlt-interoperability" >> github.properties
           cat github.properties
         working-directory: tests/network-setups/corda
           
@@ -136,13 +125,6 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
-          
-      - name: Use Protoc 3.15
-        run: |
-          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.6/protoc-3.15.6-linux-x86_64.zip
-          unzip protoc-3.15.6-linux-x86_64.zip -d protoc
-          go get -u google.golang.org/protobuf/cmd/protoc-gen-go
-          go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
           
       - name: Build Java Protos
         run: make build
@@ -239,8 +221,7 @@ jobs:
           distribution: 'adopt'
           
       # CORDA NETWORK
-      - name: Generate github.properties (on pull_request)
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Generate github.properties
         run: |
           echo "Using ${GITHUB_ACTOR} user."
           echo "username=${GITHUB_ACTOR}" >> github.properties
@@ -255,18 +236,6 @@ jobs:
           ./scripts/get-cordapps.sh || mv github.main.properties github.properties
           
           cat github.properties
-          cp github.properties ../../../samples/corda/corda-simple-application/
-        working-directory: tests/network-setups/corda
- 
-      - name: Generate github.properties (else)
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          echo "Using ${GITHUB_ACTOR} user."
-          echo "username=${GITHUB_ACTOR}" >> github.properties
-          echo "password=${{ secrets.GITHUB_TOKEN }}" >> github.properties
-          echo "url=https://maven.pkg.github.com/hyperledger-labs/weaver-dlt-interoperability" >> github.properties
-          cat github.properties
-          cp github.properties ../../../samples/corda/corda-simple-application/
         working-directory: tests/network-setups/corda
           
       # CORDA NETWORK
@@ -281,7 +250,9 @@ jobs:
         
       # CORDA CLI
       - name: Build CLI
-        run: make build-cli
+        run: |
+            cp ../../../tests/network-setups/corda/github.properties .
+            make build-cli
         working-directory: samples/corda/corda-simple-application
         
       - name: Setup Corda CLI init

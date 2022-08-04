@@ -10,7 +10,8 @@ buildscript {
     ext.corda_version = "4.8.4"
     ext.corda_core_version = "4.8.4"
     ext.arrow_version = "0.10.4"
-    ext.weaver_version = "1.2.4-alpha.+" // works for any version 1.2.4-alpha.*
+    ext.weaver_protos_version = "1.4.2"
+    ext.weaver_corda_version = "1.2.9"
 
     repositories {
         mavenCentral()
@@ -37,6 +38,10 @@ repositories {
     maven { url 'https://repo1.maven.org/maven2' }
     maven { url 'https://software.r3.com/artifactory/corda' }
     if (file("$projectDir/./github.properties").exists()) {
+        def styler = 'black red green yellow blue magenta cyan white'
+                .split().toList().withIndex(30)
+                .collectEntries { key, val -> [(key) : { "\033[${val}m${it}\033[0m" }] }
+        println "${styler['blue']('Info')}: Building using github packages..."
         file("$projectDir/github.properties").withInputStream { constants.load(it) }
         maven {
             url constants.url
@@ -47,6 +52,10 @@ repositories {
         }
     }
     else {
+        def styler = 'black red green yellow blue magenta cyan white'
+                .split().toList().withIndex(30)
+                .collectEntries { key, val -> [(key) : { "\033[${val}m${it}\033[0m" }] }
+        println "${styler['blue']('Info')}: Building locally..."
         flatDir {
             dirs '../../network/corda-interop-app/interop-contracts/build/libs'
             dirs '../../network/corda-interop-app/interop-workflows/build/libs'
@@ -83,10 +92,10 @@ dependencies {
     implementation "net.corda:corda:$corda_version"
     implementation "net.corda:corda-rpc:$corda_version"
 
-    implementation(group: 'com.weaver.corda.app.interop', name: 'interop-contracts', version: "$weaver_version")
-    implementation(group: 'com.weaver.corda.app.interop', name: 'interop-workflows', version: "$weaver_version")
-    implementation(group: 'com.weaver.corda.sdk', name: 'weaver-corda-sdk', version: "$weaver_version")
-    implementation(group: 'com.weaver', name: 'protos-java-kt', version: "$weaver_version")
+    implementation(group: 'com.weaver.corda.app.interop', name: 'interop-contracts', version: "$weaver_corda_version")
+    implementation(group: 'com.weaver.corda.app.interop', name: 'interop-workflows', version: "$weaver_corda_version")
+    implementation(group: 'com.weaver.corda.sdk', name: 'weaver-corda-sdk', version: "$weaver_corda_version")
+    implementation(group: 'com.weaver', name: 'protos-java-kt', version: "$weaver_protos_version")
     
     // gRPC and protobuf dependencies
     implementation "io.grpc:grpc-kotlin-stub:$grpc_kotlin_version"

@@ -12,6 +12,7 @@ on:
 
 jobs:
   relay-image:
+    if: github.repository_owner == 'hyperledger-labs'
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -26,4 +27,8 @@ jobs:
           
       - name: Build and Push
         run: make push-server
+        working-directory: core/relay
+        
+      - name: Push latest tag
+        run: make push-server-latest
         working-directory: core/relay
