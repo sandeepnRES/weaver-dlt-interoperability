@@ -60,13 +60,18 @@ export function getIINAgentClient(securityDomain: string, participantId: string)
     return client;
 }
 
-export function getLedgerBase(securityDomain: string): LedgerBase {
+export function getLedgerBase(securityDomain: string, memberId: string): LedgerBase {
     const ledgerId = getLedgerId(securityDomain)
+    let ledgerBase: LedgerBase
     if(process.env.DLT_TYPE.toLowerCase() == 'fabric') {
-        return new FabricConnector(ledgerId, process.env.WEAVER_CONTRACT_ID, process.env.NETWORK_NAME, process.env.CONFIG_PATH)
+        ledgerBase: FabricConnector = new FabricConnector(ledgerId, process.env.WEAVER_CONTRACT_ID, process.env.NETWORK_NAME, process.env.CONFIG_PATH)
+        if (ledgerBase.orgMspId != memberId) {
+            throw new Error(`This IIN Agent's member Id: ${ledgerBase.orgMspId} doesn't match with provided member Id: ${memberId} in request.`)
+        }
     } else {
         throw new Error(`DLT Type ${process.env.DLT_TYPE} not implemented`)
     }
+    return ledgerBase
 }
 
 export function getLedgerId(securityDomain: string): any {

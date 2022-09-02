@@ -15,13 +15,15 @@ export const syncExternalStateFromIINAgent = async (securityDomainUnit: iin_agen
 };
 
 // Generates network unit's state/configuration
-export const requestIdentityConfiguration = async (securityDomainUnit: iin_agent_pb.SecurityDomainMemberIdentityRequest) => {
-    console.log('requestIdentityConfiguration:', securityDomainUnit.getSourceNetwork()!.getSecurityDomain(), '-', securityDomainUnit.getSourceNetwork()!.getMemberId());
-    const ledgerBase = getLedgerBase(ledgerId)
-    const membership = ledgerBase.getSecurityDomainMembership();
-    const iinAgentClient = getIINAgentClient(networkUnit.getRequestingNetworkId(), networkUnit.getRequestingParticipantId())
+export const requestIdentityConfiguration = async (request: iin_agent_pb.SecurityDomainMemberIdentityRequest) => {
+    const sourceSecurityDomain = request.getSourceNetwork()!.getSecurityDomain()
+    const sourceMemberId = request.getSourceNetwork()!.getMemberId()
+    console.log('requestIdentityConfiguration:', sourceSecurityDomain, '-', sourceMemberId);
     
-    iinAgentClient.sendIdentityConfiguration()
+    const ledgerBase = getLedgerBase(sourceSecurityDomain, sourceMemberId)
+    const attestedMembership = ledgerBase.getAttestedMembership(sourceSecurityDomain, request.getNonce());
+    const iinAgentClient = getIINAgentClient(request.getRequestingNetwork()!.getSecurityDomain(), request.getRequestingNetwork()!.getMemberId())
+    iinAgentClient.sendIdentityConfiguration(attestedMembership, defaultCallback)
 };
 
 // Processes foreign security domain unit's state/configuration received from a foreign IIN agent

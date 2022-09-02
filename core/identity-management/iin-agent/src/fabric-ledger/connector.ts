@@ -46,11 +46,11 @@ export class FabricConnector extends LedgerBase {
     }
 
     // Collect security domain membership info
-    async getAttestedMembership(securityDomain: string): Promise<iin_agent_pb.AttestedMembership> {
+    async getAttestedMembership(securityDomain: string, nonce: string): Promise<iin_agent_pb.AttestedMembership> {
         const membership = getAllMSPConfigurations(this.walletPath, this.connectionProfilePath, this.configFilePath, this.ledgerId);
         membership.setSecurityDomain(securityDomain)
         const membershipSerializedBase64 = Buffer.from(membership.serializeBinary()).toString('base64');
-        const certAndSign = this.signMessage(membershipSerializedBase64)
+        const certAndSign = this.signMessage(membershipSerializedBase64 + nonce)
         
         const unitId = new SecurityDomainMemberIdentity()
         unitId.setSecurityDomain(securityDomain)

@@ -29,7 +29,7 @@ export class LedgerBase {
 
     // Collect security domain membership info
     async getAttestedMembership(securityDomain: string): Promise<iin_agent_pb.AttestedMembership> {
-        return {};
+        return new AttestedMembership();
     }
 
     // Invoke a contract to drive a transaction
