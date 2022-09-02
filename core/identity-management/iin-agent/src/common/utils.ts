@@ -6,6 +6,7 @@
 
 // Other Packages
 import * as path from 'path';
+import * as fs from 'fs';
 import { credentials } from '@grpc/grpc-js';
 
 // Weaver Packages
@@ -26,7 +27,7 @@ export function handlePromise<T>(promise: Promise<T>): Promise<[T?, Error?]> {
     return result;
 }
 
-export function getIINAgentClient(securityDomain: string, participantId: string) {
+export function getIINAgentClient(securityDomain: string, participantId: string): agent_grpc_pb.IINAgentClient {
     const dnsConfigPath = process.env.DNS_CONFIG_PATH ? process.env.DNS_CONFIG_PATH : path.resolve(__dirname, "../", "../", "dnsconfig.json")
     if (!fs.existsSync(dnsConfigPath)) {
         throw new Error('DNS config does not exist at path: ' + dnsConfigPath);
@@ -34,10 +35,10 @@ export function getIINAgentClient(securityDomain: string, participantId: string)
     const dnsConfig = JSON.parse(fs.readFileSync(dnsConfigPath, 'utf8').toString());
     const securityDomainDNS = dnsConfig[securityDomain]
     const iinAgent = securityDomainDNS[participantId]
-    let client: agent_grpc_pb.IIINAgentClient;
+    let client: agent_grpc_pb.IINAgentClient;
     if (iinAgent.tls === 'true') {
         if (iinAgent.tlsCACertPath && iinAgent.tlsCACertPath == "") {
-            client = new agent_grpc_pb.IIINAgentClient(
+            client = new agent_grpc_pb.IINAgentClient(
                 iinAgent.endpoint,
                 credentials.createSsl()
             );
@@ -46,13 +47,13 @@ export function getIINAgentClient(securityDomain: string, participantId: string)
                 throw new Error("Missing or invalid IIN Agent's tlsCACertPaths: " + iinAgent.tlsCACertPath);
             }
             const rootCert = fs.readFileSync(iinAgent.tlsCACertPath);
-            client = new agent_grpc_pb.IIINAgentClient(
+            client = new agent_grpc_pb.IINAgentClient(
                 iinAgent.endpoint,
                 credentials.createSsl(rootCert)
             );
         }
     } else {
-        client = new agent_grpc_pb.IIINAgentClient(
+        client = new agent_grpc_pb.IINAgentClient(
             iinAgent.endpoint,
             credentials.createInsecure()
         );
@@ -62,16 +63,19 @@ export function getIINAgentClient(securityDomain: string, participantId: string)
 
 export function getLedgerBase(securityDomain: string, memberId: string): LedgerBase {
     const ledgerId = getLedgerId(securityDomain)
-    let ledgerBase: LedgerBase
-    if(process.env.DLT_TYPE.toLowerCase() == 'fabric') {
-        ledgerBase: FabricConnector = new FabricConnector(ledgerId, process.env.WEAVER_CONTRACT_ID, process.env.NETWORK_NAME, process.env.CONFIG_PATH)
+    if(!process.env.DLT_TYPE) {
+        throw new Error(`Env DLT_TYPE not defined`)
+    }
+    const dltType = process.env.DLT_TYPE!.toLowerCase()
+    if(dltType == 'fabric') {
+        const ledgerBase = new FabricConnector(ledgerId, process.env.WEAVER_CONTRACT_ID, process.env.NETWORK_NAME, process.env.CONFIG_PATH)
         if (ledgerBase.orgMspId != memberId) {
             throw new Error(`This IIN Agent's member Id: ${ledgerBase.orgMspId} doesn't match with provided member Id: ${memberId} in request.`)
         }
+        return ledgerBase
     } else {
         throw new Error(`DLT Type ${process.env.DLT_TYPE} not implemented`)
     }
-    return ledgerBase
 }
 
 export function getLedgerId(securityDomain: string): any {

@@ -12,7 +12,8 @@ import iin_agent_pb from '@hyperledger-labs/weaver-protos-js/identity/agent_pb';
 import { InteroperableHelper } from '@hyperledger-labs/weaver-fabric-interop-sdk'
 
 import { LedgerBase } from '../common/ledgerBase';
-import { walletSetup } from './walletUtils';
+import { handlePromise } from '../common/utils';
+import { walletSetup, getWallet } from './walletUtils';
 import { getAllMSPConfigurations, invokeFabricChaincode, queryFabricChaincode } from './networkUtils';
 
 export class FabricConnector extends LedgerBase {
@@ -24,7 +25,7 @@ export class FabricConnector extends LedgerBase {
     iinAgentUserName: string;
 
     constructor(ledgerId: string, contractId: string, networkId: string, configFilePath: string) {
-        weaverCCId = contractId ? contractId : 'interop'
+        const weaverCCId = contractId ? contractId : 'interop'
         super(ledgerId, weaverCCId);
         //this.connectionProfilePath = connectionProfilePath ? connectionProfilePath : path.resolve(__dirname, './', 'connection_profile.json');
         //this.walletPath = walletPath ? walletPath : path.join(process.cwd(), `wallet-${this.networkId}`);
@@ -33,11 +34,11 @@ export class FabricConnector extends LedgerBase {
         if (!fs.existsSync(configFilePath)) {
             throw new Error('Config does not exist at path: ' + configFilePath);
         }
-        const config = JSON.parse(fs.readFileSync(config_file_path, 'utf8').toString());
+        const config = JSON.parse(fs.readFileSync(configFilePath, 'utf8').toString());
         this.iinAgentUserName = config.agent.name;
         this.orgMspId = config.mspId;
         this.connectionProfilePath = config.ccpPath ? config.ccpPath : path.resolve(__dirname, './', 'connection_profile.json');
-        this.walletPath = walletPath ? walletPath : path.join(process.cwd(), `wallet-${this.networkId}-${this.orgMspId}`);
+        this.walletPath = config.walletPath ? config.walletPath : path.join(process.cwd(), `wallet-${this.networkId}-${this.orgMspId}`);
     }
 
     // Setup a user (with wallet and one or more identities) with contract invocation credentials
@@ -47,16 +48,16 @@ export class FabricConnector extends LedgerBase {
 
     // Collect security domain membership info
     async getAttestedMembership(securityDomain: string, nonce: string): Promise<iin_agent_pb.AttestedMembership> {
-        const membership = getAllMSPConfigurations(this.walletPath, this.connectionProfilePath, this.configFilePath, this.ledgerId);
+        const membership = await getAllMSPConfigurations(this.walletPath, this.connectionProfilePath, this.configFilePath, this.ledgerId);
         membership.setSecurityDomain(securityDomain)
         const membershipSerializedBase64 = Buffer.from(membership.serializeBinary()).toString('base64');
-        const certAndSign = this.signMessage(membershipSerializedBase64 + nonce)
+        const certAndSign = await this.signMessage(membershipSerializedBase64 + nonce)
         
-        const unitId = new SecurityDomainMemberIdentity()
+        const unitId = new iin_agent_pb.SecurityDomainMemberIdentity()
         unitId.setSecurityDomain(securityDomain)
         unitId.setMemberId(this.orgMspId)
         
-        const attestation = new Attestation()
+        const attestation = new iin_agent_pb.Attestation()
         attestation.setUnitIdentity(unitId)
         attestation.setCertificate(certAndSign.certificate)
         attestation.setSignature(certAndSign.signature)
@@ -78,11 +79,10 @@ export class FabricConnector extends LedgerBase {
         return await queryFabricChaincode(this.walletPath, this.connectionProfilePath, this.configFilePath, this.ledgerId, this.contractId, "", []);
     }
     
-    async private signMessage(message): Promise<{ certificate: string, signature: string }> {
-        const config = getConfig();
-        const wallet = await Wallets.newFileSystemWallet(this.walletPath);
+    private async signMessage(message): Promise<{ certificate: string, signature: string }> {
+        const wallet = await getWallet(this.walletPath);
 
-        const [keyCert, keyCertError] = await handlePromise(
+        const [keyCert: { key: string, cert: string }, keyCertError] = await handlePromise(
             InteroperableHelper.getKeyAndCertForRemoteRequestbyUserName(wallet, this.iinAgentUserName)
         )
         if (keyCertError) {

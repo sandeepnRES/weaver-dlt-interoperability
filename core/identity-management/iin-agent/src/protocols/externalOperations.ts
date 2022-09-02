@@ -21,7 +21,7 @@ export const requestIdentityConfiguration = async (request: iin_agent_pb.Securit
     console.log('requestIdentityConfiguration:', sourceSecurityDomain, '-', sourceMemberId);
     
     const ledgerBase = getLedgerBase(sourceSecurityDomain, sourceMemberId)
-    const attestedMembership = ledgerBase.getAttestedMembership(sourceSecurityDomain, request.getNonce());
+    const attestedMembership = await ledgerBase.getAttestedMembership(sourceSecurityDomain, request.getNonce());
     const iinAgentClient = getIINAgentClient(request.getRequestingNetwork()!.getSecurityDomain(), request.getRequestingNetwork()!.getMemberId())
     iinAgentClient.sendIdentityConfiguration(attestedMembership, defaultCallback)
 };
