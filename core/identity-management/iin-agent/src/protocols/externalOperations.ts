@@ -12,6 +12,7 @@ import { LedgerBase } from '../common/ledgerBase';
 // Handles communication with foreign IIN agents
 export const syncExternalStateFromIINAgent = async (securityDomainUnit: iin_agent_pb.SecurityDomainMemberIdentity) => {
     console.log('syncExternalStateFromIINAgent:', securityDomainUnit.getSecurityDomain(), '-', securityDomainUnit.getMemberId());
+    
 };
 
 // Generates network unit's state/configuration

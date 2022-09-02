@@ -49,7 +49,7 @@ export class FabricConnector extends LedgerBase {
     // Collect security domain membership info
     async getAttestedMembership(securityDomain: string, nonce: string): Promise<iin_agent_pb.AttestedMembership> {
         const membership = await getAllMSPConfigurations(this.walletPath, this.connectionProfilePath, this.configFilePath, this.ledgerId);
-        membership.setSecurityDomain(securityDomain)
+        membership.setSecuritydomain(securityDomain)
         const membershipSerializedBase64 = Buffer.from(membership.serializeBinary()).toString('base64');
         const certAndSign = await this.signMessage(membershipSerializedBase64 + nonce)
         
@@ -81,13 +81,8 @@ export class FabricConnector extends LedgerBase {
     
     private async signMessage(message): Promise<{ certificate: string, signature: string }> {
         const wallet = await getWallet(this.walletPath);
-
-        const [keyCert: { key: string, cert: string }, keyCertError] = await handlePromise(
-            InteroperableHelper.getKeyAndCertForRemoteRequestbyUserName(wallet, this.iinAgentUserName)
-        )
-        if (keyCertError) {
-            throw new Error(`Error getting key and cert ${keyCertError}`)
-        }
+        type KeyCert = { key: any, cert: any }
+        const keyCert = await InteroperableHelper.getKeyAndCertForRemoteRequestbyUserName(wallet, this.iinAgentUserName)
         const signature = InteroperableHelper.signMessage(
             message,
             keyCert.key.toBytes()

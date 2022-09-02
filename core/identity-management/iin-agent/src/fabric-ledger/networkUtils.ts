@@ -10,7 +10,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import membershipPb from '@hyperledger-labs/weaver-protos-js/common/membership_pb';
-import { InteroperableHelper } from '@hyperledger-labs/weaver-fabric-interop-sdk'
 
 import { getWallet } from './walletUtils';
 import * as utils from "../common/utils";
@@ -213,22 +212,5 @@ async function queryFabricChaincode(
         throw error;
     }
 }
-
-const getDriverKeyCert = async (): Promise<any> => {
-
-    const walletPath = process.env.WALLET_PATH ? process.env.WALLET_PATH : path.join(process.cwd(), `wallet-${process.env.NETWORK_NAME ? process.env.NETWORK_NAME : 'network1'}`);
-    const config = getConfig();
-    const wallet = await Wallets.newFileSystemWallet(walletPath);
-    console.log(`Wallet path: ${walletPath}`);
-
-    const [keyCert, keyCertError] = await handlePromise(
-        InteroperableHelper.getKeyAndCertForRemoteRequestbyUserName(wallet, config.relay.name)
-    )
-    if (keyCertError) {
-        throw new Error(`Error getting key and cert ${keyCertError}`)
-    }
-    return keyCert;
-}
-
 
 export { getNetworkGateway, getNetworkContract, getMSPConfiguration, getAllMSPConfigurations, invokeFabricChaincode, queryFabricChaincode };
