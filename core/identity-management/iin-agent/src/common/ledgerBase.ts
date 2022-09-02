@@ -29,6 +29,11 @@ export class LedgerBase {
     async getSecurityDomainMembership(): Promise<object> {
         return {};
     }
+    
+    // Collect security domain membership info
+    async getAttestedMembership(): Promise<AttestedMembership> {
+        return {};
+    }
 
     // Invoke a contract to drive a transaction
     // TODO: Add parameters corresponding to the output of a flow among IIN agents

@@ -5,7 +5,8 @@
  */
 
 import iin_agent_pb from '@hyperledger-labs/weaver-protos-js/identity/agent_pb';
-import { handlePromise} from '../common/utils';
+import { handlePromise, getLedgerBase, getIINAgentClient, defaultCallback } from '../common/utils';
+import { LedgerBase } from '../common/ledgerBase';
 
 
 // Handles communication with foreign IIN agents
@@ -16,6 +17,11 @@ export const syncExternalStateFromIINAgent = async (networkUnit: iin_agent_pb.Ne
 // Generates network unit's state/configuration
 export const requestIdentityConfiguration = async (networkUnit: iin_agent_pb.NetworkUnitIdentity) => {
     console.log('requestIdentityConfiguration:', networkUnit.getNetworkId(), '-', networkUnit.getParticipantId());
+    const ledgerBase = getLedgerBase(ledgerId)
+    const membership = ledgerBase.getSecurityDomainMembership();
+    const iinAgentClient = getIINAgentClient(networkUnit.getRequestingNetworkId(), networkUnit.getRequestingParticipantId())
+    
+    iinAgentClient.sendIdentityConfiguration()
 };
 
 // Processes foreign network unit's state/configuration received from a foreign IIN agent
