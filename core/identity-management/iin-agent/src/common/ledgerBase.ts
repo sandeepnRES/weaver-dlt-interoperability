@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import iin_agent_pb from '@hyperledger-labs/weaver-protos-js/identity/agent_pb';
+
 export class LedgerBase {
     ledgerId: string;                   // Unique ID of a ledger in which the Weaver interoperation module is installed
     contractId: string;                 // Unique ID of the contract corresponding to the Weaver interoperation module installed in 'ledgerId'
@@ -26,12 +28,7 @@ export class LedgerBase {
     }
 
     // Collect security domain membership info
-    async getSecurityDomainMembership(): Promise<object> {
-        return {};
-    }
-    
-    // Collect security domain membership info
-    async getAttestedMembership(): Promise<AttestedMembership> {
+    async getAttestedMembership(securityDomain: string): Promise<iin_agent_pb.AttestedMembership> {
         return {};
     }
 

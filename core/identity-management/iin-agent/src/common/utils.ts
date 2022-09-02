@@ -62,11 +62,8 @@ export function getIINAgentClient(securityDomain: string, participantId: string)
 
 export function getLedgerBase(securityDomain: string): LedgerBase {
     const ledgerId = getLedgerId(securityDomain)
-    const contractId = process.env.WEAVER_CONTRACT_ID ? process.env.WEAVER_CONTRACT_ID : "interop"
-    const networkId = process.env.NETWORK_NAME ? process.env.NETWORK_NAME : "network1"
-    const configPath = process.env.CONFIG_PATH
     if(process.env.DLT_TYPE.toLowerCase() == 'fabric') {
-        return new FabricConnector(ledgerId, contractId, networkId, configPath)
+        return new FabricConnector(ledgerId, process.env.WEAVER_CONTRACT_ID, process.env.NETWORK_NAME, process.env.CONFIG_PATH)
     } else {
         throw new Error(`DLT Type ${process.env.DLT_TYPE} not implemented`)
     }
