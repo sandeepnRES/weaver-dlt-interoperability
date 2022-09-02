@@ -15,8 +15,8 @@ export const syncExternalStateFromIINAgent = async (securityDomainUnit: iin_agen
 };
 
 // Generates network unit's state/configuration
-export const requestIdentityConfiguration = async (securityDomainUnit: iin_agent_pb.SecurityDomainMemberIdentity) => {
-    console.log('requestIdentityConfiguration:', securityDomainUnit.getSecurityDomain(), '-', securityDomainUnit.getMemberId());
+export const requestIdentityConfiguration = async (securityDomainUnit: iin_agent_pb.SecurityDomainMemberIdentityRequest) => {
+    console.log('requestIdentityConfiguration:', securityDomainUnit.getSourceNetwork()!.getSecurityDomain(), '-', securityDomainUnit.getSourceNetwork()!.getMemberId());
     const ledgerBase = getLedgerBase(ledgerId)
     const membership = ledgerBase.getSecurityDomainMembership();
     const iinAgentClient = getIINAgentClient(networkUnit.getRequestingNetworkId(), networkUnit.getRequestingParticipantId())
