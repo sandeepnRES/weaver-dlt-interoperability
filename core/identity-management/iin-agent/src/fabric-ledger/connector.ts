@@ -67,6 +67,32 @@ export class FabricConnector extends LedgerBase {
         attestedMembership.setAttestation(attestation)
         return attestedMembership;
     }
+    
+    // Collect security domain membership info
+    async counterAttestMembership(attestedMembershipSet: iin_agent_pb.CounterAttestedMembership.AttestedMembershipSet, securityDomain: string, nonce: string): Promise<iin_agent_pb.CounterAttestedMembership> {
+        const attestedMembershipSetSerialized64 = Buffer.from(attestedMembershipSet.serializeBinary()).toString('base64')
+        const certAndSign = await this.signMessage(attestedMembershipSetSerialized64 + nonce)
+        
+        const unitId = new iin_agent_pb.SecurityDomainMemberIdentity()
+        unitId.setSecurityDomain(securityDomain)
+        unitId.setMemberId(this.orgMspId)
+        
+        const attestation = new iin_agent_pb.Attestation()
+        attestation.setUnitIdentity(unitId)
+        attestation.setCertificate(certAndSign.certificate)
+        attestation.setSignature(certAndSign.signature)
+        
+        const counterAttestedMembership = new iin_agent_pb.CounterAttestedMembership()
+        counterAttestedMembership.setAttestedMembershipSet(attestedMembershipSetSerialized64)
+        counterAttestedMembership.setAttestationsList([attestation])
+        return counterAttestedMembership;
+    }
+    
+    // record Membership
+    async recordMembershipInLedger(counterAttestedMembership: iin_agent_pb.CounterAttestedMembership): Promise<any> {
+        const counterAttestedMembershipSerialized64 = Buffer.from(counterAttestedMembership.serializeBinary()).toString('base64')
+        return await invokeFabricChaincode(this.walletPath, this.connectionProfilePath, this.configFilePath, this.ledgerId, this.contractId, "CreateMembership", counterAttestedMembershipSerialized64);
+    }
 
     // Invoke a contract to drive a transaction
     // TODO: Add parameters corresponding to the output of a flow among IIN agents

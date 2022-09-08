@@ -27,13 +27,10 @@ export function handlePromise<T>(promise: Promise<T>): Promise<[T?, Error?]> {
     return result;
 }
 
-export function getIINAgentClient(securityDomain: string, participantId: string): agent_grpc_pb.IINAgentClient {
-    const dnsConfigPath = process.env.DNS_CONFIG_PATH ? process.env.DNS_CONFIG_PATH : path.resolve(__dirname, "../", "../", "dnsconfig.json")
-    if (!fs.existsSync(dnsConfigPath)) {
-        throw new Error('DNS config does not exist at path: ' + dnsConfigPath);
+export function getIINAgentClient(securityDomain: string, participantId: string, securityDomainDNS?: Object): agent_grpc_pb.IINAgentClient {
+    if (!securityDomainDNS) {
+        securityDomainDNS = getSecurityDomainDNS(securityDomain)
     }
-    const dnsConfig = JSON.parse(fs.readFileSync(dnsConfigPath, 'utf8').toString());
-    const securityDomainDNS = dnsConfig[securityDomain]
     const iinAgent = securityDomainDNS[participantId]
     let client: agent_grpc_pb.IINAgentClient;
     if (iinAgent.tls === 'true') {
@@ -87,10 +84,23 @@ export function getLedgerId(securityDomain: string): any {
     return secDomConfig[securityDomain]
 }
 
+export function getSecurityDomainDNS(securityDomain: string): any {
+    const dnsConfigPath = process.env.DNS_CONFIG_PATH ? process.env.DNS_CONFIG_PATH : path.resolve(__dirname, "../", "../", "dnsconfig.json")
+    if (!fs.existsSync(dnsConfigPath)) {
+        throw new Error('DNS config does not exist at path: ' + dnsConfigPath);
+    }
+    const dnsConfig = JSON.parse(fs.readFileSync(dnsConfigPath, 'utf8').toString());
+    return dnsConfig[securityDomain]
+}
+
 export function defaultCallback(err: any, response: any) {
     if (response) {
         console.log(`Response: ${JSON.stringify(response.toObject())}`);
     } else if (err) {
         console.log(`Error: ${JSON.stringify(err)}`);
     }
+}
+
+export async function delay(ms: number) {
+    await new Promise(resolve => setTimeout(()=>resolve(), ms)).then(()=>console.log("fired"));
 }
