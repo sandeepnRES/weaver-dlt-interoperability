@@ -1,12 +1,18 @@
+/*
+ * Copyright IBM Corp. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import iin_agent_pb from '@hyperledger-labs/weaver-protos-js/identity/agent_pb';
+
 export class LedgerBase {
     ledgerId: string;                   // Unique ID of a ledger in which the Weaver interoperation module is installed
     contractId: string;                 // Unique ID of the contract corresponding to the Weaver interoperation module installed in 'ledgerId'
-    private _isConnected: boolean       // Flag indicating whether we are ready to invoke contracts on the ledger
 
     constructor(ledgerId: string, contractId: string) {
         this.ledgerId = ledgerId;
         this.contractId = contractId;
-        this._isConnected = false;
     }
 
     getLedgerID(): string {
@@ -17,17 +23,23 @@ export class LedgerBase {
         return this.contractId;
     }
 
-    isConnected(): boolean {
-        return this._isConnected;
-    }
-
     // Setup a user (with wallet and one or more identities) with contract invocation credentials
     async setupWalletIdentity() {
     }
 
-    // Preliminary configuration as a prerequisite for contract invocation
-    async setupLedgerConnection() {
-        this._isConnected = true;
+    // Collect security domain membership info
+    async getAttestedMembership(securityDomain: string, nonce: string): Promise<iin_agent_pb.AttestedMembership> {
+        return new iin_agent_pb.AttestedMembership();
+    }
+    
+    // Collect security domain membership info
+    async counterAttestMembership(attestedMembershipSet: iin_agent_pb.CounterAttestedMembership.AttestedMembershipSet, securityDomain: string, nonce: string): Promise<iin_agent_pb.CounterAttestedMembership> {
+        return new iin_agent_pb.CounterAttestedMembership();
+    }
+    
+    // record Membership
+    async recordMembershipInLedger(counterAttestedMembership: iin_agent_pb.CounterAttestedMembership): Promise<any> {
+        return ""
     }
 
     // Invoke a contract to drive a transaction
@@ -36,6 +48,7 @@ export class LedgerBase {
     }
 
     // Query a contract to fetch information from the ledger
-    async queryContract() {
+    async queryContract(): Promise<string> {
+        return "";
     }
 }
