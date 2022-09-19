@@ -33,6 +33,7 @@
   "dependencies": {
     "@truffle/contract": "^4.2.14",
     "gluegun": "latest",
+    "merkle-patricia-tree": "^4.2.4",
     "rlp": "^3.0.0",
     "winston": "^3.3.3"
   },
