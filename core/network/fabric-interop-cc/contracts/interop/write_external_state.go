@@ -293,14 +293,15 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 		return fmt.Errorf("Address in response does not match original address: Original: %s Response: %s", address, interopPayload.Address)
 	}
 	signerList := []string{}
-	for _, endorsment := range fabricViewData.Endorsements {
+	for _, endorsedProposalResponse := range fabricViewData.EndorsedProposalResponses {
+		endorsement := endorsedProposalResponse.Endorsement
 		var serialisedIdentity msp.SerializedIdentity
 		err := proto.Unmarshal(endorsment.Endorser, &serialisedIdentity)
 		x509Cert, err := parseCert(string(serialisedIdentity.IdBytes))
 		if err != nil {
 			return fmt.Errorf("Unable to parse certificate: %s", err.Error())
 		}
-		proposalResponsePayloadBytes, err := proto.Marshal(fabricViewData.ProposalResponsePayload)
+		proposalResponsePayloadBytes, err := proto.Marshal(endorsedProposalResponse.payload)
 		if err != nil {
 			return fmt.Errorf("Unable to marshal proposal response payload: %s", err.Error())
 		}
@@ -317,15 +318,16 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 			return fmt.Errorf("Verify membership failed. Certificate not valid: %s", err.Error())
 		}
 		signerList = append(signerList, org)
-	}
-	// 5. Verify the response matches the response inside the ProposalResponsePayload chaincodeaction
-	var chaincodeAction peer.ChaincodeAction
-	err = proto.Unmarshal(fabricViewData.ProposalResponsePayload.Extension, &chaincodeAction)
-	if err != nil {
-		return fmt.Errorf("Unable to Unmarshal ChaincodeAction: %s", err.Error())
-	}
-	if string(chaincodeAction.Response.Payload) != string(fabricViewData.Response.Payload) {
-		return fmt.Errorf("Response in fabric view does not match response in proposal response")
+		
+		// 5. Verify the response matches the response inside the ProposalResponsePayload chaincodeaction
+		var chaincodeAction peer.ChaincodeAction
+		err = proto.Unmarshal(endorsedProposalResponse.payload.Extension, &chaincodeAction)
+		if err != nil {
+			return fmt.Errorf("Unable to Unmarshal ChaincodeAction: %s", err.Error())
+		}
+		if string(chaincodeAction.Response.Payload) != string(fabricViewData.Response.Payload) {
+			return fmt.Errorf("Response in fabric view does not match response in proposal response")
+		}
 	}
 	// 6. Check the notarizations fulfill the verification policy of the request.
 	requiredSigners := verificationPolicy.Criteria
