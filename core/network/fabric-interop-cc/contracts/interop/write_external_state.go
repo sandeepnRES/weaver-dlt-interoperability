@@ -296,7 +296,7 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 	for _, endorsedProposalResponse := range fabricViewData.EndorsedProposalResponses {
 		endorsement := endorsedProposalResponse.Endorsement
 		var serialisedIdentity msp.SerializedIdentity
-		err := proto.Unmarshal(endorsment.Endorser, &serialisedIdentity)
+		err := proto.Unmarshal(endorsement.Endorser, &serialisedIdentity)
 		x509Cert, err := parseCert(string(serialisedIdentity.IdBytes))
 		if err != nil {
 			return fmt.Errorf("Unable to parse certificate: %s", err.Error())
@@ -307,7 +307,7 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 		}
 
 		// 3. Verify each of the endorser signatures in the ProposalResponse according to the response payload and certificate.
-		err = validateSignature(string(append(proposalResponsePayloadBytes, endorsment.Endorser...)), x509Cert, string(endorsment.Signature))
+		err = validateSignature(string(append(proposalResponsePayloadBytes, endorsement.Endorser...)), x509Cert, string(endorsement.Signature))
 		if err != nil {
 			return fmt.Errorf("Unable to Validate Signature: %s", err.Error())
 		}
