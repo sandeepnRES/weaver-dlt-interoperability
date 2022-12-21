@@ -301,7 +301,7 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 		if err != nil {
 			return fmt.Errorf("Unable to parse certificate: %s", err.Error())
 		}
-		proposalResponsePayloadBytes, err := proto.Marshal(endorsedProposalResponse.payload)
+		proposalResponsePayloadBytes, err := proto.Marshal(endorsedProposalResponse.Payload)
 		if err != nil {
 			return fmt.Errorf("Unable to marshal proposal response payload: %s", err.Error())
 		}
@@ -321,7 +321,7 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 		
 		// 5. Verify the response matches the response inside the ProposalResponsePayload chaincodeaction
 		var chaincodeAction peer.ChaincodeAction
-		err = proto.Unmarshal(endorsedProposalResponse.payload.Extension, &chaincodeAction)
+		err = proto.Unmarshal(endorsedProposalResponse.Payload.Extension, &chaincodeAction)
 		if err != nil {
 			return fmt.Errorf("Unable to Unmarshal ChaincodeAction: %s", err.Error())
 		}
