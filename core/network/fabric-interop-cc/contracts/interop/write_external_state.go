@@ -318,16 +318,16 @@ func verifyFabricNotarization(s *SmartContract, ctx contractapi.TransactionConte
 			return fmt.Errorf("Verify membership failed. Certificate not valid: %s", err.Error())
 		}
 		signerList = append(signerList, org)
-		
-		// 5. Verify the response matches the response inside the ProposalResponsePayload chaincodeaction
-		var chaincodeAction peer.ChaincodeAction
-		err = proto.Unmarshal(endorsedProposalResponse.Payload.Extension, &chaincodeAction)
-		if err != nil {
-			return fmt.Errorf("Unable to Unmarshal ChaincodeAction: %s", err.Error())
-		}
-		if string(chaincodeAction.Response.Payload) != string(fabricViewData.Response.Payload) {
-			return fmt.Errorf("Response in fabric view does not match response in proposal response")
-		}
+	}
+	
+	// 5. Verify the response matches the response inside the ProposalResponsePayload chaincodeaction
+	var chaincodeAction peer.ChaincodeAction
+	err = proto.Unmarshal(fabricViewData.EndorsedProposalResponses[0].Payload.Extension, &chaincodeAction)
+	if err != nil {
+		return fmt.Errorf("Unable to Unmarshal ChaincodeAction: %s", err.Error())
+	}
+	if string(chaincodeAction.Response.Payload) != string(fabricViewData.Response.Payload) {
+		return fmt.Errorf("Response in fabric view does not match response in proposal response")
 	}
 	// 6. Check the notarizations fulfill the verification policy of the request.
 	requiredSigners := verificationPolicy.Criteria
