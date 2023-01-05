@@ -163,7 +163,7 @@ class GetExternalStateByLinearId(
                     val proofMessage = proofStringPrefix + mspIdList + proofStringSuffix
                     println("Proof Message: ${proofMessage}.\n")
 
-                    var notarizationList: List<ViewDataOuterClass.ViewData.Notarization> = listOf()
+                    var notarizationList: List<ViewDataOuterClass.ViewData.NotarizedPayload> = listOf()
 
                     fabricViewData.endorsedProposalResponsesList.map { endorsedProposalResponse ->
                         val endorsement = endorsedProposalResponse.endorsement
@@ -172,7 +172,7 @@ class GetExternalStateByLinearId(
                         val certString = Base64.getEncoder().encodeToString(serializedIdentity.idBytes.toByteArray())
                         val signature = Base64.getEncoder().encodeToString(endorsement.signature.toByteArray())
                         
-                        val notarization = ViewDataOuterClass.ViewData.Notarization.newBuilder()
+                        val notarization = ViewDataOuterClass.ViewData.NotarizedPayload.newBuilder()
                                 .setCertificate(certString)
                                 .setSignature(signature)
                                 .setId(mspId)
