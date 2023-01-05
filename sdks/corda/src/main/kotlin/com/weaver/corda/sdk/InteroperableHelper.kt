@@ -1,4 +1,4 @@
-/*
+notarizedPayloads/*
  * Copyright IBM Corp. All Rights Reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -227,7 +227,7 @@ class InteroperableHelper {
         ): List<String> {
             val responseView = getExternalStateView(proxy, externalStateLinearId)
             var result: List<String> = listOf()
-            for (notarization in responseView.notarizationsList) {
+            for (notarization in responseView.notarizedPayloadsList) {
                 val id = notarization.id
                 result += id
             }
@@ -245,7 +245,7 @@ class InteroperableHelper {
             signerId: String
         ): String {
             val responseView = getExternalStateView(proxy, externalStateLinearId)
-            for (notarization in responseView.notarizationsList) {
+            for (notarization in responseView.notarizedPayloadsList) {
                 val id = notarization.id
                 if (id == signerId) {
                     return notarization.signature
@@ -265,7 +265,7 @@ class InteroperableHelper {
             signerId: String
         ): String {
             val responseView = getExternalStateView(proxy, externalStateLinearId)
-            for (notarization in responseView.notarizationsList) {
+            for (notarization in responseView.notarizedPayloadsList) {
                 val id = notarization.id
                 if (id == signerId) {
                     return notarization.certificate
