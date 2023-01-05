@@ -115,7 +115,7 @@ fun createAggregatedCordaView(views: List<State.View>) : Either<Error, State.Vie
 
     // Flatten the lists of notarizedPayloads returned from each node to a single list
     val notarizedPayloads = cordaViewDataList.map { cordaViewData  ->
-        cordaViewData.notarizedPayloadsList[0]
+        cordaViewData.notarizedPayloadsList
     }.flatten()
 
     // Create a new CordaViewData with the flattened list

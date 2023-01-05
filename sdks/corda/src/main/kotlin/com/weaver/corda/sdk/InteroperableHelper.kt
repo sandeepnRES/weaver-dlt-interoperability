@@ -214,7 +214,8 @@ class InteroperableHelper {
             externalStateLinearId: String
         ): String {
             val responseView = getExternalStateView(proxy, externalStateLinearId)
-            return responseView.notarizedPayloadsList[0].payload.toStringUtf8()
+            val interopPayload = InteropPayloadOuterClass.InteropPayload.parseFrom(responseView.notarizedPayloadsList[0].payload)
+            return interopPayload.payload.toStringUtf8()
         }
         
         /**
