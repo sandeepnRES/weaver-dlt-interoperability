@@ -185,7 +185,7 @@ const getResponseDataFromView = (view, privKeyPEM = null) => {
                 const decryptedPayloadContents = interopPayloadPb.ConfidentialPayloadContents.deserializeBinary(Uint8Array.from(Buffer.from(decryptedPayload)));
                 if (i === 0) {
                     viewAddress = interopPayload.getAddress();
-                    responsePayload = Buffer.from(decryptedPayloadContents.getPayload()).toString('base64');
+                    responsePayload = Buffer.from(decryptedPayloadContents.getPayload()).toString();
                     payloadConfidential = true;
                 } else if (!payloadConfidential) {
                     throw new Error(`Mismatching payload confidentiality flags across proposal responses`);
@@ -195,7 +195,7 @@ const getResponseDataFromView = (view, privKeyPEM = null) => {
                         throw new Error(`Proposal response view addresses mismatch: 0 - ${viewAddress}, ${i} - ${interopPayload.getAddress()}`);
                     }
                     // Match decrypted view payloads from the different proposal responses
-                    const currentResponsePayload = Buffer.from(decryptedPayloadContents.getPayload()).toString('base64');
+                    const currentResponsePayload = Buffer.from(decryptedPayloadContents.getPayload()).toString();
                     if (responsePayload !== currentResponsePayload) {
                         throw new Error(`Decrypted proposal response payloads mismatch: 0 - ${responsePayload}, ${i} - ${currentResponsePayload}`);
                     }
@@ -204,12 +204,12 @@ const getResponseDataFromView = (view, privKeyPEM = null) => {
             } else {
                 if (i === 0) {
                     viewAddress = interopPayload.getAddress();
-                    responsePayload = Buffer.from(interopPayload.getPayload()).toString('base64');
+                    responsePayload = Buffer.from(interopPayload.getPayload()).toString();
                     payloadConfidential = false;
                 } else if (payloadConfidential) {
                     throw new Error(`Mismatching payload confidentiality flags across proposal responses`);
                 } else {
-                    const currentResponsePayload = Buffer.from(interopPayload.getPayload()).toString('base64');
+                    const currentResponsePayload = Buffer.from(interopPayload.getPayload()).toString();
                     if (responsePayload !== currentResponsePayload) {
                         throw new Error(`Proposal response payloads mismatch: 0 - ${responsePayload}, ${i} - ${currentResponsePayload}`);
                     }
@@ -239,12 +239,12 @@ const getResponseDataFromView = (view, privKeyPEM = null) => {
             } else {
                 if (i === 0) {
                     viewAddress = interopPayload.getAddress();
-                    responsePayload = Buffer.from(interopPayload.getPayload()).toString('base64');
+                    responsePayload = Buffer.from(interopPayload.getPayload()).toString();
                     payloadConfidential = false;
                 } else if (payloadConfidential) {
                     throw new Error(`Mismatching payload confidentiality flags across notarized payloads`);
                 } else {
-                    const currentResponsePayload = Buffer.from(interopPayload.getPayload()).toString('base64');
+                    const currentResponsePayload = Buffer.from(interopPayload.getPayload()).toString();
                     if (responsePayload !== currentResponsePayload) {
                         throw new Error(`Proposal response payloads mismatch: 0 - ${responsePayload}, ${i} - ${currentResponsePayload}`);
                     }
