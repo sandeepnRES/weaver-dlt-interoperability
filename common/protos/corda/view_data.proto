@@ -13,5 +13,5 @@ message ViewData {
         // Bytes of InteropPayload
         bytes payload = 4;
     }
-    repeated NotarizedPayload notarizedPayloads = 1;
+    repeated NotarizedPayload notarized_payloads = 1;
 }
