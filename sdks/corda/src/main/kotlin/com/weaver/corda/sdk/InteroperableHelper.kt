@@ -31,8 +31,9 @@ import net.corda.core.messaging.CordaRPCOps
 import com.weaver.corda.app.interop.flows.CreateExternalRequest
 import com.weaver.corda.app.interop.flows.WriteExternalStateInitiator
 import com.weaver.corda.app.interop.flows.GetExternalStateByLinearId
-import com.weaver.protos.corda.ViewDataOuterClass
+import com.weaver.protos.common.interop_payload.InteropPayloadOuterClass
 import com.weaver.protos.common.state.State
+import com.weaver.protos.corda.ViewDataOuterClass
 import com.weaver.protos.networks.networks.Networks
 
 class InteroperableHelper {
