@@ -176,6 +176,7 @@ class GetExternalStateByLinearId(
                                 .setCertificate(certString)
                                 .setSignature(signature)
                                 .setId(mspId)
+                                .setPayload(interopPayload.payload)
                                 .build()
                         notarizationList = notarizationList + notarization
                     }
