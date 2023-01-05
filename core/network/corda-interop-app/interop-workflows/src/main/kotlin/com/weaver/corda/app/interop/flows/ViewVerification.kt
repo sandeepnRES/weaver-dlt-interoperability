@@ -127,6 +127,7 @@ fun verifyCordaNotarization(viewData: ByteString, verificationPolicyCriteria: Li
                     if (interopPayload != notarizedPayload.payload) {
                         Left(Error("InteropPayload doesn't match across responses from different nodes"))
                     }
+                    Right(true)
                 }
             }
         }
