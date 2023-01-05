@@ -53,12 +53,12 @@ func ExtractAndValidateDataFromView(view *common.View, b64ViewContentList []stri
 			interopPayloadList[i] = &interopPayload
 		}
 	} else if view.Meta.Protocol == common.Meta_CORDA {
-		interopPayloadList = make([]*common.InteropPayload, len(cordaViewData.NotarizedPayloads))
 		var cordaViewData corda.ViewData
 		err := protoV2.Unmarshal(view.Data, &cordaViewData)
 		if err != nil {
 			return nil, fmt.Errorf("CordaView Unmarshal error: %s", err)
 		}
+		interopPayloadList = make([]*common.InteropPayload, len(cordaViewData.NotarizedPayloads))
 		for i, notarizedPayload := range cordaViewData.NotarizedPayloads {
 			var interopPayload common.InteropPayload
 			err = protoV2.Unmarshal(notarizedPayload.Payload, &interopPayload)
@@ -274,8 +274,6 @@ func verifyCordaNotarization(s *SmartContract, ctx contractapi.TransactionContex
 		}
 		if i == 0 {
 			viewPayload = value.Payload
-		} else if viewPayload != value.Payload {
-			return fmt.Errorf("InteropPayload doesn't match across responses from different nodes")
 		}
 		var interopPayload common.InteropPayload
 		err = protoV2.Unmarshal(value.Payload, &interopPayload)
