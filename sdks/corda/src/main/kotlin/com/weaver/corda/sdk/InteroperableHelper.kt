@@ -1,4 +1,4 @@
-notarizedPayloads/*
+/*
  * Copyright IBM Corp. All Rights Reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -214,7 +214,7 @@ class InteroperableHelper {
             externalStateLinearId: String
         ): String {
             val responseView = getExternalStateView(proxy, externalStateLinearId)
-            return responseView.payload.toStringUtf8()
+            return responseView.notarizedPayloadsList[0].payload.toStringUtf8()
         }
         
         /**
