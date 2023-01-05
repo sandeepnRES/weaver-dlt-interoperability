@@ -115,13 +115,19 @@ fun verifyCordaNotarization(viewData: ByteString, verificationPolicyCriteria: Li
     // 1. Make the CordaViewData object from the view data
     val cordaViewData = ViewDataOuterClass.ViewData.parseFrom(viewData)
     println("Corda view data: $cordaViewData")
+    
+    var interopPayload = cordaViewData.notarizedPayloadsList[0].payload
 
     // 2. Map over the list of notarizations and verify the signature, creating a list of Either Error Boolean
-    val eitherErrorCordaViewData = cordaViewData.notarizationsList.map { notarization ->
-        getCertificateFromString(notarization.certificate).flatMap { x509Cert ->
+    val eitherErrorCordaViewData = cordaViewData.notarizedPayloadsList.map { notarizedPayload ->
+        getCertificateFromString(notarizedPayload.certificate).flatMap { x509Cert ->
             // 3. Check the certificates are valid according to the [Membership].
-            verifyMemberInSecurityDomain(x509Cert, securityDomain, notarization.id, serviceHub).flatMap {
-                verifyNodeSignature(notarization.certificate, notarization.signature, cordaViewData.payload.toByteArray())
+            verifyMemberInSecurityDomain(x509Cert, securityDomain, notarizedPayload.id, serviceHub).flatMap {
+                verifyNodeSignature(notarizedPayload.certificate, notarizedPayload.signature, notarizedPayload.payload.toByteArray()).flatMap {
+                    if (interopPayload != notarizedPayload.payload) {
+                        Left(Error("InteropPayload doesn't match across responses from different nodes"))
+                    }
+                }
             }
         }
     }
@@ -131,8 +137,8 @@ fun verifyCordaNotarization(viewData: ByteString, verificationPolicyCriteria: Li
             // Map the Right to the view data
             .map { viewData }
 
-    // Get the signers from the list of notarizations
-    val signers = cordaViewData.notarizationsList.map { it.id }
+    // Get the signers from the list of notarizedPayloads
+    val signers = cordaViewData.notarizedPayloadsList.map { it.id }
 
     // 4. Check that every party listed in the verification policy is a signatory
     eitherErrorCordaViewData.flatMap { _ ->

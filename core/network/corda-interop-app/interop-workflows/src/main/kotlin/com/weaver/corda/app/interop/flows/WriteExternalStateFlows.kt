@@ -128,13 +128,12 @@ class GetExternalStateByLinearId(
                 State.Meta.Protocol.CORDA -> {
                     val cordaViewData = ViewDataOuterClass.ViewData.parseFrom(viewDataByteArray)
                     println("cordaViewData: $cordaViewData")
-                    val interopPayload = InteropPayloadOuterClass.InteropPayload.parseFrom(cordaViewData.payload)
+                    val interopPayload = InteropPayloadOuterClass.InteropPayload.parseFrom(cordaViewData.notarizedPayloadsList[0].payload)
                     val payloadString = interopPayload.payload.toStringUtf8()
                     println("response from remote: ${payloadString}.\n")
                     println("query address: ${interopPayload.address}.\n")
                     val viewData = ViewDataOuterClass.ViewData.newBuilder()
-                            .addAllNotarizations(cordaViewData.notarizationsList)
-                            .setPayload(interopPayload.payload)
+                            .addAllNotarizedPayloads(cordaViewData.notarizedPayloadsList)
                             .build()
                             
                     return viewData.toByteArray()
@@ -182,8 +181,7 @@ class GetExternalStateByLinearId(
                     }
 
                     val viewData = ViewDataOuterClass.ViewData.newBuilder()
-                            .addAllNotarizations(notarizationList)
-                            .setPayload(interopPayload.payload)
+                            .addAllNotarizedPayloads(notarizationList)
                             .build()
                             
                     return viewData.toByteArray()
