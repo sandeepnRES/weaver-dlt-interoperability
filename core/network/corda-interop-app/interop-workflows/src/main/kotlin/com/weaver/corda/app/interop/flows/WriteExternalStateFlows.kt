@@ -42,7 +42,9 @@ import com.weaver.corda.app.interop.states.ExternalState
 @StartableByRPC
 class WriteExternalStateInitiator(
         val viewBase64String: String,
-        val address: String): FlowLogic<Either<Error, UniqueIdentifier>>() {
+        val address: String,
+        val viewContentsBase64: List<String> = listOf<String>()
+): FlowLogic<Either<Error, UniqueIdentifier>>() {
 
     /**
      * The call() method captures the logic to perform the proof validation and the construction of
@@ -57,7 +59,7 @@ class WriteExternalStateInitiator(
         val view = State.View.parseFrom(Base64.getDecoder().decode(viewBase64String))
 
         // 1. Verify the proofs that are returned
-        verifyView(view, address, serviceHub).flatMap {
+        verifyView(view, address, viewContentsBase64, serviceHub).flatMap {
             println("View verification successful. Creating state to be stored in the vault.")
             // 2. Create the state to be stored
             val state = ExternalState(
@@ -65,7 +67,7 @@ class WriteExternalStateInitiator(
                     participants = listOf(ourIdentity),
                     meta = view.meta.toByteArray(),
                     state = view.data.toByteArray())
-            println("Storing ExternalState in the vault:\n\tLinear Id = ${state.linearId}\n\tParticipants = ${state.participants}\n\tMeta = ${view.meta}\tState = ${Base64.getEncoder().encodeToString(state.state)}\n")
+            println("Storing ExternalState in the vault:\n\tLinear Id = ${state.linearId}\n\tParticipants = ${state.participants}\n\tMeta = ${view.meta}\tState = ${state.state.toBase64()}\n")
 
             // 3. Build the transaction
             val notary = serviceHub.networkMapCache.notaryIdentities.first()
@@ -169,8 +171,8 @@ class GetExternalStateByLinearId(
                         val endorsement = endorsedProposalResponse.endorsement
                         val serializedIdentity = Identities.SerializedIdentity.parseFrom(endorsement.endorser)
                         val mspId = serializedIdentity.mspid
-                        val certString = Base64.getEncoder().encodeToString(serializedIdentity.idBytes.toByteArray())
-                        val signature = Base64.getEncoder().encodeToString(endorsement.signature.toByteArray())
+                        val certString = serializedIdentity.idBytes.toBase64()
+                        val signature = endorsement.signature.toBase64()
                         
                         val notarization = ViewDataOuterClass.ViewData.NotarizedPayload.newBuilder()
                                 .setCertificate(certString)

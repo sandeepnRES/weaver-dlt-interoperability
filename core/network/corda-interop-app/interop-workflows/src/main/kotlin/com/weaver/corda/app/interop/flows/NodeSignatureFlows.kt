@@ -42,8 +42,8 @@ class CreateNodeSignatureFlow(val data: ByteArray): FlowLogic<Either<Error, Stri
         // Remove square brackets around the signature then convert to Base64 byte array
         val signatureWithoutBrackets = signatureHexString.substring(1, signatureHexString.length - 1)
         val signatureBase64ByteArray = DatatypeConverter.parseHexBinary(signatureWithoutBrackets)
-        println(Base64.getEncoder().encodeToString(signatureBase64ByteArray))
-        Right(Base64.getEncoder().encodeToString(signatureBase64ByteArray))
+        println(signatureBase64ByteArray.toBase64())
+        Right(signatureBase64ByteArray.toBase64())
     } catch (e: Exception) {
         println("Error signing data: ${e.message}")
         Left(Error("Error signing data: ${e.message}"))

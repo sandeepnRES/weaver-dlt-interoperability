@@ -38,6 +38,7 @@ import java.util.Base64
 @Suspendable
 fun verifyView(view: State.View,
                addressString: String,
+               viewContentsBase64: List<String>,
                serviceHub: ServiceHub): Either<Error, Unit> = try {
     parseAddress(addressString).flatMap { address ->
         println("Verifying view from external network.\n")
@@ -64,6 +65,7 @@ fun verifyView(view: State.View,
                                 verificationPolicyCriteria,
                                 address.securityDomain,
                                 addressString,
+                                viewContentsBase64,
                                 serviceHub)
                         else -> {
                             println("Verification Error: Proof type other than Notarization not supported in Fabric.\n")
@@ -180,11 +182,12 @@ fun verifyFabricNotarization(
         verificationPolicyCriteria: List<String>,
         securityDomain: String,
         addressString: String,
+        viewContentsBase64: List<String>,
         serviceHub: ServiceHub): Either<Error, Unit> {
     try {
         println("Verifying Fabric notarizations.\n")
 
-        val viewDataBase64String = Base64.getEncoder().encodeToString(viewData.toByteArray())
+        val viewDataBase64String = viewData.toBase64()
 
         println("viewDataBase64String: $viewDataBase64String")
 
@@ -193,10 +196,10 @@ fun verifyFabricNotarization(
         println("Fabric view data: $fabricViewData\n")
 
         // TODO: Handle encrypted (confidential) payloads in Fabric views
+        var viewPayload = ByteArray(0)
         var responsePayload = ""
-        var responsePayloadEncoded = ""
-        var responseIndex = 0
-        for (endorsedProposalResponse in fabricViewData.endorsedProposalResponsesList) {
+        var payloadConfidential = false
+        for ((responseIndex, endorsedProposalResponse) in fabricViewData.endorsedProposalResponsesList.withIndex()) {
             val chaincodeAction = ProposalPackage.ChaincodeAction.parseFrom(endorsedProposalResponse.payload.extension)
             val interopPayload = InteropPayloadOuterClass.InteropPayload.parseFrom(chaincodeAction.response.payload)
             println("Interop payload: $interopPayload")
@@ -205,16 +208,53 @@ fun verifyFabricNotarization(
                 println("Address in response does not match original address: Original: $addressString Response: ${interopPayload.address}")
                 return Left(Error("Address in response does not match original address: Original: $addressString Response: ${interopPayload.address}"))
             }
-            // 3. Verify that the responses in the different ProposalResponsePayload blobs match each other
-            if (responseIndex == 0) {
-                responsePayload = chaincodeAction.response.payload.toString()
-                responsePayloadEncoded = Base64.getEncoder().encodeToString(chaincodeAction.response.payload.toByteArray())
-            } else if (responsePayload != chaincodeAction.response.payload.toString()) {
-                println("Mismatching payloads in proposal responses: 0 - $responsePayload,  $responseIndex: ${chaincodeAction.response.payload}")
-                val encodedPayload = Base64.getEncoder().encodeToString(chaincodeAction.response.payload.toByteArray())
-                return Left(Error("Mismatching payloads in proposal responses: 0 - $responsePayloadEncoded,  $responseIndex: $encodedPayload"))
+            if (interopPayload.confidential) {
+                // 3. Verify that the responses in the different decrypted payload blobs match each other
+                // and hash in ConfidentialPayload match with the given decrypted response
+                val confidentialPayloadContents = InteropPayloadOuterClass.ConfidentialPayloadContents.parseFrom(
+                    Base64.getDecoder().decode(viewContentsBase64[responseIndex].toByteArray())
+                )
+                val confidentialPayload = InteropPayloadOuterClass.ConfidentialPayload.parseFrom(
+                    interopPayload.payload
+                )
+                if (responseIndex == 0) {
+                    if (fabricViewData.endorsedProposalResponsesList.size != viewContentsBase64.size) {
+                        println("Number of decrypted payloads "+viewContentsBase64.size+" does not match number of view contents "+fabricViewData.endorsedProposalResponsesList.size)
+                        return Left(Error("Number of decrypted payloads "+viewContentsBase64.size+" does not match number of view contents "+fabricViewData.endorsedProposalResponsesList.size))
+                    }
+                    payloadConfidential = true
+                    viewPayload = confidentialPayloadContents.payload.toByteArray()
+                } else if(!payloadConfidential) {
+                    println("Mismatching confidentiality flags among interop payloads")
+                    return Left(Error("Mismatching confidentiality flags among interop payloads"))
+                } else if (viewPayload.toBase64() != confidentialPayloadContents.payload.toBase64()) {
+                    println("Mismatching payloads in proposal responses: 0 - "+viewPayload.toBase64()+", "+responseIndex+" - "+confidentialPayloadContents.payload.toBase64())
+                    return Left(Error("Mismatching payloads in proposal responses: 0 - "+viewPayload.toBase64()+", "+responseIndex+" - "+confidentialPayloadContents.payload.toBase64()))
+                }
+                if (confidentialPayload.hashType == InteropPayloadOuterClass.ConfidentialPayload.HashType.HMAC) {
+                    val computedHash = calcHmacSha256(confidentialPayloadContents.payload.toByteArray(), confidentialPayloadContents.random.toByteArray())
+                    if (computedHash.toBase64() != confidentialPayload.hash.toBase64()) {
+                        println("View payload hash does not match hash of data submitted by client")
+                        return Left(Error("View payload hash does not match hash of data submitted by client"))
+                    }
+                } else {
+    				println("Unsupported hash type in interop view payload: "+confidentialPayload.hashType)
+                    return Left(Error("Unsupported hash type in interop view payload: "+confidentialPayload.hashType))
+    			}
+            } else {
+                // 3. Verify that the responses in the different ProposalResponsePayload blobs match each other
+                val currentPayload = chaincodeAction.response.payload.toBase64()
+                if (responseIndex == 0) {
+                    responsePayload = currentPayload
+                    payloadConfidential = false
+                } else if(payloadConfidential) {
+                    println("Mismatching confidentiality flags among interop payloads")
+                    return Left(Error("Mismatching confidentiality flags among interop payloads"))
+                } else if (responsePayload != currentPayload) {
+                    println("Mismatching payloads in proposal responses: 0 - $responsePayload,  $responseIndex: $currentPayload")
+                    return Left(Error("Mismatching payloads in proposal responses: 0 - $responsePayload,  $responseIndex: $currentPayload"))
+                }
             }
-            responseIndex++
         }
 
         // For each of the peer responses in the viewData, parse the proposal response field to a ProposalResponse
@@ -256,7 +296,7 @@ fun verifyFabricNotarization(
 fun verifyEndorsementAndMapToOrgName(endorsement: ProposalResponsePackage.Endorsement, securityDomain: String, proposalResponsePayloadBytes: ByteArray, serviceHub: ServiceHub): Either<Error, String> {
     // Get the endorser certificate from the Endorsement
     val serializedIdentity = Identities.SerializedIdentity.parseFrom(endorsement.endorser)
-    val certString = Base64.getEncoder().encodeToString(serializedIdentity.idBytes.toByteArray())
+    val certString = serializedIdentity.idBytes.toBase64()
     println("Cert string of endorser: $certString")
 
     // Convert the certificate string to an X509 certificate

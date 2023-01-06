@@ -286,7 +286,7 @@ class GetAssetExchangeHTLCHashById(
             throw NullPointerException("No such AssetExchangeHTLCState with linearId $linearId exists.")
         } else {
             val htlcState = states.first().state.data
-            val hashBase64 = Base64.getEncoder().encodeToString(htlcState.lockInfo.hash.bytes)
+            val hashBase64 = htlcState.lockInfo.hash.bytes.toBase64()
             val response = "{\"hashMechanism\":\"" + htlcState.lockInfo.hashMechanism + "\", \"hashBase64\":\"" + hashBase64 + "\"}"
             println("Response GetAssetExchangeHTLCHashById: ${response}")
             return response.toByteArray()

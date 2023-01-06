@@ -10,12 +10,16 @@ import arrow.core.Either
 import arrow.core.Left
 import arrow.core.Right
 import arrow.core.flatMap
-import com.weaver.corda.app.interop.states.Member
-import com.weaver.corda.app.interop.states.MembershipState
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Base64
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.weaver.protos.common.interop_payload.InteropPayloadOuterClass
+import com.weaver.corda.app.interop.states.Member
+import com.weaver.corda.app.interop.states.MembershipState
 
 /**
  * The isCertificateWithinExpiry function checks whether the provided certificate is within its validity period.
@@ -130,4 +134,57 @@ fun x509CertToPem(cert: X509Certificate): String {
     val pemCertPre = Base64.getEncoder().encodeToString(derCert).replace("(.{64})".toRegex(), "$1\n")
     val pemCert = cert_begin + pemCertPre + end_cert;
     return pemCert;
+}
+
+/*
+ * The calcHmacSha256 function generates HMAC-SHA256 hash
+ *
+ * @param message The message to be hashed in ByteArray
+ * @return Returns hashed ByteArray
+ */
+fun calcHmacSha256(message: ByteArray, secretKey: ByteArray): ByteArray {
+    var hmacSha256: ByteArray
+    try {
+        val mac = Mac.getInstance("HmacSHA256")
+        val secretKeySpec = SecretKeySpec(secretKey, "HmacSHA256")
+        mac.init(secretKeySpec)
+        hmacSha256 = mac.doFinal(message);
+    } catch (e: Exception) {
+        throw RuntimeException("Failed to calculate hmac-sha256", e);
+    }
+    return hmacSha256;
+    
+}
+
+/*
+ * Encrypts a message with RSA pubKey
+ */
+fun encryptMessage(message: ByteArray, pubKey: PublicKey) {
+    val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+    cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+    return cipher.doFinal(message)
+}
+
+/*
+ * Generate Confidential Payload as per protocol in RFC
+ */
+fun generateConfidentialInteropPayloadAndHash(payload: ByteArray, cert: String): ByteArray {
+    // Generate a 16-byte random key for the HMAC
+    val secretKey = ByteArray(16)
+    Random.nextBytes(key)
+    
+    val confidentialPayloadContents = InteropPayloadOuterClass.ConfidentialPayloadContents.newBuilder()
+        .setPayload(ByteString.copyFrom(payload))
+        .setRandom(ByteString.copyFrom(secretKey))
+    
+    val hash = calcHmacSha256(payload, secretKey)
+    val x509Cert = getCertificateFromString(cert)
+    val encryptedPayload = encryptMessage(confidentialPayloadContents.toByteArray(), cert.publicKey)
+    
+    val confidentialPayload = InteropPayloadOuterClass.ConfidentialPayload.newBuilder()
+        .setEncryptedPayload(ByteString.copyFrom(encryptedPayload))
+        .setHashType(InteropPayloadOuterClass.ConfidentialPayload.HashType.HMAC)
+        .setHash(ByteString.copyFrom(hash))
+
+	return confidentialPayload.toByteArray()
 }
