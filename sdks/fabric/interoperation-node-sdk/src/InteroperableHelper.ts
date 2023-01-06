@@ -173,7 +173,7 @@ const getResponseDataFromView = (view, privKeyPEM = null) => {
     if (view.getMeta().getProtocol() == statePb.Meta.Protocol.FABRIC) {
         const fabricView = fabricViewPb.FabricView.deserializeBinary(view.getData());
         const fabricViewProposalResponses = fabricView.getEndorsedProposalResponsesList();
-        for (fabricViewProposalResponse of fabricViewProposalResponses) {
+        for (const fabricViewProposalResponse of fabricViewProposalResponses) {
             const fabricViewChaincodeAction = proposalPb.ChaincodeAction.deserializeBinary(fabricViewProposalResponse.getPayload().getExtension_asU8());
             const interopPayload = interopPayloadPb.InteropPayload.deserializeBinary(fabricViewChaincodeAction.getResponse().getPayload_asU8());
             interopPayloadList.push(interopPayload)
@@ -181,9 +181,10 @@ const getResponseDataFromView = (view, privKeyPEM = null) => {
     } else if (view.getMeta().getProtocol() == statePb.Meta.Protocol.CORDA) {
         const cordaView = cordaViewPb.ViewData.deserializeBinary(view.getData());
         const cordaNotarizedPayloads = cordaView.getNotarizedPayloadsList();
-        for (notarizedPayload of cordaNotarizedPayloads) {
+        for (const notarizedPayload of cordaNotarizedPayloads) {
             const interopPayload = interopPayloadPb.InteropPayload.deserializeBinary(notarizedPayload.getPayload_asU8());
             interopPayloadList.push(interopPayload)
+        }
     } else {
         const protocolType = view.getMeta().getProtocol();
         throw new Error(`Unsupported DLT type: ${protocolType}`);
