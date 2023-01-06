@@ -366,7 +366,7 @@ class InteroperableHelper {
                 logger.debug("Sending response to Corda for view verification.\n")
                 val stateId = runCatching {
                     val viewBase64String = Base64.getEncoder().encodeToString(requestState.view.toByteArray())
-                    proxy.startFlow(::WriteExternalStateInitiator, viewBase64String, address)
+                    proxy.startFlow(::WriteExternalStateInitiator, viewBase64String, address, listOf())
                             .returnValue.get()
                 }.fold({
                     it.map { linearId ->
