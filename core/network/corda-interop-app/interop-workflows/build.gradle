@@ -73,6 +73,8 @@ dependencies {
     compile "io.arrow-kt:arrow-fx:$arrow_version"
     compile "io.arrow-kt:arrow-syntax:$arrow_version"
     
+    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.64'
+    
     // weaver-protos
     compile "com.weaver:protos-java-kt:$weaver_version"
     

@@ -9,13 +9,21 @@ package com.weaver.corda.app.interop
 import com.weaver.corda.app.interop.flows.getCertificateFromString
 import com.weaver.corda.app.interop.flows.verifyCertificateChain
 import com.weaver.corda.app.interop.flows.verifyNodeSignature
+import com.weaver.corda.app.interop.flows.verifyCaCertificate
+import com.weaver.corda.app.interop.flows.generateConfidentialInteropPayloadAndHash
+import com.weaver.corda.app.interop.flows.decryptConfidentialPayload
+import com.weaver.corda.app.interop.flows.toBase64
+import com.weaver.corda.app.interop.flows.createView
+import com.weaver.protos.common.interop_payload.InteropPayloadOuterClass
 import arrow.core.flatMap
 import arrow.core.Right
-import com.weaver.corda.app.interop.flows.verifyCaCertificate
 import org.junit.Test
 import kotlin.test.assertTrue
 
+
 class CertUtilsTests {
+    val privKeyFabricString = javaClass.getResource("/test_data/privKeyFabric.pem").readText(Charsets.UTF_8)
+    val signCertFabricString = javaClass.getResource("/test_data/signCertFabric.pem").readText(Charsets.UTF_8)
     @Test
     fun `verifyCaCertificate tests`() {
         val fabricCA = "-----BEGIN CERTIFICATE-----\n" +
@@ -66,5 +74,14 @@ class CertUtilsTests {
             assertTrue { res.isRight() }
             Right(Unit)
         }
+    }
+    
+    @Test
+    fun `encryptWithECDSA tests`() {
+        val msg = "random-message".toByteArray()
+        val confPayloadBytes = generateConfidentialInteropPayloadAndHash(msg, signCertFabricString)
+        val confPayload = InteropPayloadOuterClass.ConfidentialPayload.parseFrom(confPayloadBytes)
+        val viewContents = decryptConfidentialPayload(confPayload.encryptedPayload.toByteArray(), privKeyFabricString)
+        assertTrue { viewContents.payload.toBase64() ==  msg.toBase64() }
     }
 }

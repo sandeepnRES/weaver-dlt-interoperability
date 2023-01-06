@@ -15,6 +15,9 @@ import java.io.ByteArrayInputStream
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.util.Base64
+import java.security.KeyFactory
+import java.security.PrivateKey
+import java.security.spec.PKCS8EncodedKeySpec
 
 /**
  * The parseAddress function takes the address field of a Query sent from an external network at parses it into its
@@ -142,6 +145,23 @@ fun getCertificateFromString(certificateString: String) : Either<Error, X509Cert
 } catch (e: Exception) {
     println("Parse Error: failed to parse requester certificate: ${e.message}.\n")
     Left(Error("Parse Error: failed to parse requester certificate: ${e.message}"))
+}
+
+fun getECDSAPrivateKeyFromString(privateKey: String): Either<Error, PrivateKey> {
+    return try {
+        val privKeyBytes = Base64.getDecoder().decode(privateKey
+            .replace("\\n".toRegex(), "")
+            .removePrefix("-----BEGIN PRIVATE KEY-----")
+            .removeSuffix("-----END PRIVATE KEY-----")
+            .toByteArray()
+        )
+        val spec: PKCS8EncodedKeySpec = PKCS8EncodedKeySpec(privKeyBytes)
+        val factory: KeyFactory  = KeyFactory.getInstance("ECDSA")
+        Right(factory.generatePrivate(spec))
+    } catch (e: Exception) {
+        println("Parse Error: failed to parse ECDSA private key: ${e.message}.\n")
+        Left(Error("Parse Error: failed to parse ECDSA private key: ${e.message}"))
+    }
 }
 
 /**

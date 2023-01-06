@@ -11,11 +11,17 @@ import arrow.core.Left
 import arrow.core.Right
 import arrow.core.flatMap
 import java.security.cert.X509Certificate
+import java.security.PublicKey
+import java.security.PrivateKey
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Base64
-import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
+import java.security.Security;
+import javax.crypto.*
+import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
+import com.google.protobuf.ByteString
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 
 import com.weaver.protos.common.interop_payload.InteropPayloadOuterClass
 import com.weaver.corda.app.interop.states.Member
@@ -61,11 +67,14 @@ fun verifyCaCertificate(
         requesterCertificate: X509Certificate,
         memberCACertString: String): Either<Error, Unit> = try {
     println("Verifying the certificate was issued by the member's certificate authority")
-
     getCertificateFromString(memberCACertString).flatMap { memberCACertificate ->
         isCertificateWithinExpiry(memberCACertificate).flatMap {
-            // Check that the requester's certificate was issued by the member's CA
-            if (requesterCertificate.issuerX500Principal != memberCACertificate.subjectX500Principal) {
+            // The CA is automatically a member of the security domain
+            if (requesterCertificate == memberCACertificate) {
+                println("Verification of membership was successful.\n")
+                Right(Unit)
+            } else if (requesterCertificate.issuerX500Principal != memberCACertificate.subjectX500Principal) {
+                // Check that the requester's certificate was issued by the member's CA
                 println("Verification Error: Requester's certificate not issued by the member's CA")
                 Left(Error("Verification Error: Requester's certificate not issued by the member's CA"))
             } else {
@@ -157,12 +166,22 @@ fun calcHmacSha256(message: ByteArray, secretKey: ByteArray): ByteArray {
 }
 
 /*
- * Encrypts a message with RSA pubKey
+ * Encrypts a message using ECIES
  */
-fun encryptMessage(message: ByteArray, pubKey: PublicKey) {
-    val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+fun encryptMessage(message: ByteArray, pubKey: PublicKey): ByteArray {
+    Security.addProvider(BouncyCastleProvider());
+    val cipher = Cipher.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
     cipher.init(Cipher.ENCRYPT_MODE, pubKey);
     return cipher.doFinal(message)
+}
+/*
+ * Decrypts a message using ECIES
+ */
+fun decryptMessage(cipherMessage: ByteArray, privKey: PrivateKey): ByteArray {
+    Security.addProvider(BouncyCastleProvider());
+    val cipher = Cipher.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
+    cipher.init(Cipher.DECRYPT_MODE, privKey);
+    return cipher.doFinal(cipherMessage)
 }
 
 /*
@@ -171,20 +190,53 @@ fun encryptMessage(message: ByteArray, pubKey: PublicKey) {
 fun generateConfidentialInteropPayloadAndHash(payload: ByteArray, cert: String): ByteArray {
     // Generate a 16-byte random key for the HMAC
     val secretKey = ByteArray(16)
-    Random.nextBytes(key)
+    Random.nextBytes(secretKey)
     
     val confidentialPayloadContents = InteropPayloadOuterClass.ConfidentialPayloadContents.newBuilder()
         .setPayload(ByteString.copyFrom(payload))
         .setRandom(ByteString.copyFrom(secretKey))
+        .build()
+        
+    println("ConfidentialPayloadContents: "+confidentialPayloadContents.toByteArray().toBase64())
     
     val hash = calcHmacSha256(payload, secretKey)
-    val x509Cert = getCertificateFromString(cert)
-    val encryptedPayload = encryptMessage(confidentialPayloadContents.toByteArray(), cert.publicKey)
+    var x509Cert: X509Certificate = getCertificateFromString(cert).fold({
+        throw Exception("Certificate invalid", it)
+    }, {
+        it
+    })
+    
+    var encryptedPayload = ByteArray(0)
+    if (x509Cert.publicKey != null) {
+        // ECDSA
+        println("pubkey: "+x509Cert.publicKey.getEncoded().toBase64())
+        encryptedPayload = encryptMessage(confidentialPayloadContents.toByteArray(), x509Cert.publicKey)
+    } else {
+        // TODO: ED25519
+        throw Exception("Encryption algorithm not supported")
+    }
     
     val confidentialPayload = InteropPayloadOuterClass.ConfidentialPayload.newBuilder()
         .setEncryptedPayload(ByteString.copyFrom(encryptedPayload))
         .setHashType(InteropPayloadOuterClass.ConfidentialPayload.HashType.HMAC)
         .setHash(ByteString.copyFrom(hash))
+        .build()
 
+    println("Returning confidential payload")
 	return confidentialPayload.toByteArray()
+}
+
+/*
+ * Decrypt Confidential Payload and return ConfidentialPayloadContents
+ */
+fun decryptConfidentialPayload(payload: ByteArray, privateKeyString: String): InteropPayloadOuterClass.ConfidentialPayloadContents {
+    val privateKey = getECDSAPrivateKeyFromString(privateKeyString).fold({
+        //TODO: Try reading ED25519 key
+        throw Exception("Currently can read only ECDSA Keys: ", it)
+    }, {
+        it
+    })
+    val decryptedPayload = decryptMessage(payload, privateKey)
+    val viewContents = InteropPayloadOuterClass.ConfidentialPayloadContents.parseFrom(decryptedPayload)
+    return viewContents
 }

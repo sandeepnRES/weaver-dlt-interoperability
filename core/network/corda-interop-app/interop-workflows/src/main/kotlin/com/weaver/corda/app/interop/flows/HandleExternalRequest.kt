@@ -81,9 +81,16 @@ class HandleExternalRequest(val query: QueryOuterClass.Query) : FlowLogic<Either
                 }
             }
         }.flatMap { flowResult ->
+            var payload = flowResult
+            if (query.confidential) {
+                payload = generateConfidentialInteropPayloadAndHash(flowResult, query.certificate)
+            }
             val interopPayload = InteropPayloadOuterClass.InteropPayload.newBuilder()
                     .setAddress(query.address)
-                    .setPayload(ByteString.copyFrom(flowResult))
+                    .setPayload(ByteString.copyFrom(payload))
+                    .setConfidential(query.confidential)
+                    .setRequestorCertificate(query.certificate)
+                    .setNonce(query.nonce)
                     .build()
             // 7. Assemble the view from the result returned from the flow
             subFlow(CreateNodeSignatureFlow(interopPayload.toByteArray())).flatMap { signature ->
@@ -93,7 +100,8 @@ class HandleExternalRequest(val query: QueryOuterClass.Query) : FlowLogic<Either
                         signature,
                         convertCertificateToBase64Pem(ourIdentityAndCert.certificate.encoded),
                         ourIdentity.name.organisation)
-                println("Generated view: $view \n")
+                val view64 = view.map { it.toByteArray().toBase64() }
+                println("Generated view in base64: $view64 \n")
                 view
             }
         }
@@ -130,7 +138,8 @@ class QueryState() : FlowLogic<ByteArray>() {
             println("Failed to retrieve states")
             states = null
         }
-        return states.toString().toByteArray()
+        /* return states.toString().toByteArray() */
+        return "random-message".toByteArray()
     }
 }
 

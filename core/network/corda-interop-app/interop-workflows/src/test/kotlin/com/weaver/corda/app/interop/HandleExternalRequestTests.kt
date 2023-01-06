@@ -65,6 +65,40 @@ class HandleExternalRequestTests {
             .setRequestId("")
             .setRequestingOrg("PartyA")
             .build()
+    
+    val privKeyFabricString = javaClass.getResource("/test_data/privKeyFabric.pem").readText(Charsets.UTF_8)
+    val signCertFabricString = javaClass.getResource("/test_data/signCertFabric.pem").readText(Charsets.UTF_8)    
+    val confidentialQuery = QueryOuterClass.Query.newBuilder()
+            .addAllPolicy(listOf())
+            .setAddress("localhost:9080/Corda_Network/localhost:10006#com.weaver.corda.app.interop.flows.QueryState")
+            .setRequestingRelay("")
+            .setRequestingNetwork("network1")
+            .setCertificate(signCertFabricString)
+            .setRequestorSignature("MEYCIQCPndQkcRrM+FG0nMIfiQo2AkcJh2Wkd0WwEx77N3Z1OgIhAI41cqjBLj8d/DTDGqNM0fNZ09LVBRG7PP4tdEAc6emo")
+            .setNonce("830fee2e-41ff-41b3-9534-7fcb3a0aae72")
+            .setRequestId("")
+            .setRequestingOrg("Org1MSP")
+            .setConfidential(true)
+            .build()
+           
+    val fabricMembership = MembershipState(
+            securityDomain = "network1",
+            members = mapOf("Org1MSP" to Member(
+                    value = signCertFabricString,
+                    type = "ca",
+                    chain = listOf()
+            ))
+    )
+    val fabricAccessControlPolicy = AccessControlPolicyState(
+            securityDomain = "network1",
+            rules = listOf(
+                    Rule(
+                            principal = signCertFabricString,
+                            principalType = "certificate",
+                            resource = "localhost:10006#com.weaver.corda.app.interop.flows.QueryState",
+                            read = true
+                    ))
+    )
 
     val certChain = listOf(
             "-----BEGIN CERTIFICATE-----\nMIICCTCCAbCgAwIBAgIIcFe0qctqSucwCgYIKoZIzj0EAwIwWDEbMBkGA1UEAwwS\nQ29yZGEgTm9kZSBSb290IENBMQswCQYDVQQKDAJSMzEOMAwGA1UECwwFY29yZGEx\nDzANBgNVBAcMBkxvbmRvbjELMAkGA1UEBhMCVUswHhcNMTcwNTIyMDAwMDAwWhcN\nMjcwNTIwMDAwMDAwWjBYMRswGQYDVQQDDBJDb3JkYSBOb2RlIFJvb3QgQ0ExCzAJ\nBgNVBAoMAlIzMQ4wDAYDVQQLDAVjb3JkYTEPMA0GA1UEBwwGTG9uZG9uMQswCQYD\nVQQGEwJVSzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABGlm6LFHrVkzfuUHin36\nJrm1aUMarX/NUZXw8n8gSiJmsZPlUEplJ+f/lzZMky5EZPTtCciG34pnOP0eiMd/\nJTCjZDBiMB0GA1UdDgQWBBR8rqnfuUgBKxOJC5rmRYUcORcHczALBgNVHQ8EBAMC\nAYYwIwYDVR0lBBwwGgYIKwYBBQUHAwEGCCsGAQUFBwMCBgRVHSUAMA8GA1UdEwEB\n/wQFMAMBAf8wCgYIKoZIzj0EAwIDRwAwRAIgDaL4SguKsNeTT7SeUkFdoCBACeG8\nGqO4M1KlfimphQwCICiq00hDanT5W8bTLqE7GIGuplf/O8AABlpWrUg6uiUB\n-----END CERTIFICATE-----",
@@ -105,6 +139,26 @@ class HandleExternalRequestTests {
         assert(linearId2.isRight()) { "CreateMembershipState should return a Right(UniqueIdentifier)" }
 
         val happyFuture = partyA.startFlow(HandleExternalRequest(query))
+        network.runNetwork()
+        val happyLinearId = happyFuture.getOrThrow()
+        assertTrue(happyLinearId.isRight())
+    }
+    
+    @Test
+    fun `HandleExternalRequest confidential happy case`() {
+        
+        // Create membership and access control in vault
+        val future = partyA.startFlow(CreateAccessControlPolicy(fabricAccessControlPolicy))
+        network.runNetwork()
+        val linearId = future.getOrThrow()
+        assert(linearId.isRight()) { "CreateAccessControlPolicy should return a Right(UniqueIdentifier)" }
+
+        val future2 = partyA.startFlow(CreateMembershipState(fabricMembership))
+        network.runNetwork()
+        val linearId2 = future2.getOrThrow()
+        assert(linearId2.isRight()) { "CreateMembershipState should return a Right(UniqueIdentifier)" }
+
+        val happyFuture = partyA.startFlow(HandleExternalRequest(confidentialQuery))
         network.runNetwork()
         val happyLinearId = happyFuture.getOrThrow()
         assertTrue(happyLinearId.isRight())
