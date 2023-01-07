@@ -19,7 +19,8 @@ import java.util.Base64
 import java.security.Security;
 import javax.crypto.*
 import javax.crypto.spec.SecretKeySpec
-import kotlin.random.Random
+/* import kotlin.random.Random */
+import net.corda.core.contracts.UniqueIdentifier
 import com.google.protobuf.ByteString
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 
@@ -189,8 +190,9 @@ fun decryptMessage(cipherMessage: ByteArray, privKey: PrivateKey): ByteArray {
  */
 fun generateConfidentialInteropPayloadAndHash(payload: ByteArray, cert: String): ByteArray {
     // Generate a 16-byte random key for the HMAC
-    val secretKey = ByteArray(16)
-    Random.nextBytes(secretKey)
+    /* val secretKey = ByteArray(16)
+    Random.nextBytes(secretKey) */
+    val secretKey = UniqueIdentifier().toByteArray()
     
     val confidentialPayloadContents = InteropPayloadOuterClass.ConfidentialPayloadContents.newBuilder()
         .setPayload(ByteString.copyFrom(payload))
