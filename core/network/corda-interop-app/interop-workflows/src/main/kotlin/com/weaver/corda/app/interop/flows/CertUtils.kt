@@ -192,7 +192,7 @@ fun generateConfidentialInteropPayloadAndHash(payload: ByteArray, cert: String):
     // Generate a 16-byte random key for the HMAC
     /* val secretKey = ByteArray(16)
     Random.nextBytes(secretKey) */
-    val secretKey = UniqueIdentifier().toByteArray()
+    val secretKey = UniqueIdentifier().toString().toByteArray()
     
     val confidentialPayloadContents = InteropPayloadOuterClass.ConfidentialPayloadContents.newBuilder()
         .setPayload(ByteString.copyFrom(payload))
