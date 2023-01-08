@@ -54,7 +54,7 @@ class QuerySerializer: SerializationCustomSerializer<Query, QuerySerializer.Prox
             requestorSignature = obj.requestorSignature,
             nonce = obj.nonce,
             requestId = obj.requestId,
-            requestingOrg = obj.requestingOrg
+            requestingOrg = obj.requestingOrg,
             confidential = obj.confidential)
 
     /** The function fromProxy describes how the Proxy class should be converted back to a
